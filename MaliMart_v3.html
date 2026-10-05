@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaliMart</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#222}
+header{background:#111827;color:white;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:25px}
+header p{margin:5px 0 0;font-size:13px;color:#d1d5db}
+.container{max-width:900px;margin:auto;padding:15px}
+.hero{background:white;border-radius:14px;padding:22px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
+.hero h2{margin-top:0}
+.notice{background:#fff7ed;border-left:4px solid #f97316;padding:12px;border-radius:8px;font-size:14px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.product{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px #00000010}
+.product .pic{height:120px;background:#eef2f7;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px}
+.product h3{font-size:16px;margin:10px 0 5px}
+.price{font-weight:bold;font-size:17px}
+button{border:0;border-radius:8px;padding:10px 13px;background:#111827;color:white;cursor:pointer}
+button.secondary{background:#e5e7eb;color:#111827}
+form{display:grid;gap:10px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+.cart{background:white;border-radius:14px;padding:18px;margin-top:15px;box-shadow:0 2px 10px #00000012}
+.row{display:flex;justify-content:space-between;gap:10px;margin:7px 0}
+.total{font-size:19px;font-weight:bold;border-top:1px solid #ddd;padding-top:10px}
+.small{font-size:12px;color:#6b7280}
+footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛍️ MaliMart</h1>
+  <p>Your local marketplace</p>
+</header>
+
+<div class="container">
+
+<section class="hero">
+  <h2>Shop locally with MaliMart</h2>
+  <p>Discover products from local sellers and get them delivered to you.</p>
+  <div class="notice">
+    Delivery: <b>Rs. 45 inside Biratnagar</b> · <b>Rs. 65 outside Biratnagar</b>
+  </div>
+</section>
+
+<section class="hero">
+  <h2>Products</h2>
+  <div id="products" class="products"></div>
+  <p id="emptyProducts" class="small">Products will appear here when the marketplace catalog is connected.</p>
+</section>
+
+<section class="cart">
+  <h2>🛒 Your Cart</h2>
+  <div id="cartItems"></div>
+  <div class="row"><span>Subtotal</span><span id="subtotal">Rs. 0</span></div>
+  <div class="row"><span>Delivery</span><span id="delivery">Rs. 0</span></div>
+  <div class="row total"><span>Total</span><span id="total">Rs. 0</span></div>
+</section>
+
+<section class="hero">
+  <h2>Place Order</h2>
+  <form id="orderForm">
+    <input id="customerName" required placeholder="Your name">
+    <input id="customerPhone" required placeholder="Phone number" inputmode="tel">
+    <input id="address" required placeholder="Delivery address">
+    <select id="area" required>
+      <option value="">Select delivery area</option>
+      <option value="biratnagar">Inside Biratnagar</option>
+      <option value="outside">Outside Biratnagar</option>
+    </select>
+    <textarea id="notes" rows="3" placeholder="Order notes (optional)"></textarea>
+    <button type="submit">Place Order</button>
+  </form>
+  <p id="orderMessage" class="small"></p>
+</section>
+
+<section class="hero">
+  <h2>Replacement Policy</h2>
+  <p>Eligible customers can request a replacement within <b>2 days after delivery</b>.</p>
+  <p><b>No cash refunds.</b> One replacement is provided for an eligible order.</p>
+</section>
+
+</div>
+
+<footer>
+  © 2026 MaliMart · Local marketplace
+</footer>
+
+<script>
+// ============================================================
+// MALIMART SUPABASE CONFIGURATION
+// Enter these two values locally before connecting the backend.
+// Never send your key to anyone in chat.
+// ============================================================
+const SUPABASE_URL = "PASTE_YOUR_MALIMART_SUPABASE_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_MALIMART_ANON_OR_PUBLISHABLE_KEY_HERE";
+
+// Starter product catalog.
+// These can later be replaced by products stored in Supabase.
+const sampleProducts = [
+  {id:1,name:"Sample Product 1",price:100},
+  {id:2,name:"Sample Product 2",price:200},
+  {id:3,name:"Sample Product 3",price:300}
+];
+
+let cart = [];
+
+function money(n){
+  return "Rs. " + Number(n || 0).toLocaleString("en-IN");
+}
+
+function renderProducts(){
+  const box=document.getElementById("products");
+  const empty=document.getElementById("emptyProducts");
+  box.innerHTML="";
+  if(!sampleProducts.length){
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  sampleProducts.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="product";
+    div.innerHTML=`
+      <div class="pic">Product image</div>
+      <h3>${p.name}</h3>
+      <div class="price">${money(p.price)}</div>
+      <br>
+      <button onclick="addToCart(${p.id})">Add to cart</button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function addToCart(id){
+  const product=sampleProducts.find(p=>p.id===id);
+  if(!product)return;
+  const existing=cart.find(p=>p.id===id);
+  if(existing) existing.qty++;
+  else cart.push({...product,qty:1});
+  renderCart();
+}
+
+function removeFromCart(id){
+  cart=cart.filter(p=>p.id!==id);
+  renderCart();
+}
+
+function renderCart(){
+  const box=document.getElementById("cartItems");
+  box.innerHTML="";
+  let subtotal=0;
+  cart.forEach(item=>{
+    const line=item.price*item.qty;
+    subtotal+=line;
+    const row=document.createElement("div");
+    row.className="row";
+    row.innerHTML=`
+      <span>${item.name} × ${item.qty}</span>
+      <span>${money(line)} <button class="secondary" onclick="removeFromCart(${item.id})">Remove</button></span>
+    `;
+    box.appendChild(row);
+  });
+  const area=document.getElementById("area").value;
+  const delivery=cart.length ? (area==="biratnagar"?45:area==="outside"?65:0) : 0;
+  document.getElementById("subtotal").textContent=money(subtotal);
+  document.getElementById("delivery").textContent=money(delivery);
+  document.getElementById("total").textContent=money(subtotal+delivery);
+}
+
+document.getElementById("area").addEventListener("change",renderCart);
+
+document.getElementById("orderForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const msg=document.getElementById("orderMessage");
+
+  if(!cart.length){
+    msg.textContent="Please add at least one product to your cart.";
+    return;
+  }
+
+  if(SUPABASE_URL.includes("PASTE_") || SUPABASE_ANON_KEY.includes("PASTE_")){
+    msg.textContent="The MaliMart backend is not connected yet. Add the Supabase URL and key first.";
+    return;
+  }
+
+  // Backend order submission will be connected here after the database
+  // table/columns are confirmed. This prevents sending data to an
+  // incorrectly configured table.
+  msg.textContent="Backend connection is ready to be connected to the MaliMart orders table.";
+});
+
+renderProducts();
+renderCart();
+</script>
+</body>
+</html>
