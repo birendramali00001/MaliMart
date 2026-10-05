@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaliMart Admin Login</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.12);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 22px;
+      border: none;
+      border-radius: 8px;
+      background: #111827;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+    }
+
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+    <h1>🛒 MaliMart</h1>
+    <div class="subtitle">Admin Login</div>
+
+    <form id="loginForm">
+
+      <label for="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="Admin email"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="Admin password"
+        required
+      >
+
+      <button type="submit" id="loginButton">
+        Login
+      </button>
+
+      <div id="message"></div>
+
+    </form>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
+
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const message = document.getElementById("message");
+
+    loginForm.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      loginButton.disabled = true;
+      loginButton.textContent = "Logging in...";
+      message.textContent = "";
+
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+      if (error) {
+        message.textContent = error.message;
+        message.style.color = "red";
+
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
+        return;
+      }
+
+      message.textContent = "Login successful!";
+      message.style.color = "green";
+
+      setTimeout(function() {
+        window.location.href = "admin-dashboard.html";
+      }, 700);
+    });
+  </script>
+
+</body>
+</html>
