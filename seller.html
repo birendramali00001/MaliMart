@@ -3,43 +3,53 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MaliMart Seller Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#f4f6f9;font-family:Arial,sans-serif;color:#222}
-header{background:#172554;color:white;padding:20px;text-align:center}
-main{max-width:650px;margin:22px auto;padding:18px}
-.card{background:white;padding:20px;border-radius:14px;box-shadow:0 3px 15px #00000012}
-h2{margin-top:0}
-label{display:block;font-weight:bold;margin:16px 0 7px}
-input,select{width:100%;padding:12px;border:1px solid #ccd2dc;border-radius:8px;font-size:16px;background:white}
-button{width:100%;padding:14px;border:0;border-radius:8px;background:#166534;color:white;font-weight:bold;font-size:16px;margin-top:18px}
-button:disabled{opacity:.55}
-.note{font-size:13px;color:#555;line-height:1.5}
-#message{padding:12px;border-radius:8px;margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere}
-.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-.preview-item{min-width:0}
-.preview-item strong{display:block;font-size:13px;margin-bottom:8px}
-.preview-image{width:100%;aspect-ratio:1/1;object-fit:contain;background:white;border:1px solid #ddd;border-radius:8px}
-#previewArea{display:none;margin-top:18px}
-footer{text-align:center;color:#777;font-size:12px;padding:20px}
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#f3f5f7;margin:0;color:#222}
+header{background:#087b45;color:white;padding:18px;text-align:center}
+main{max-width:700px;margin:20px auto;padding:12px}
+.card{background:white;padding:18px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 9px #0001}
+h2{margin-top:0;color:#087b45}input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:7px;font-size:16px}
+button{background:#087b45;color:white;border:0;font-weight:bold;cursor:pointer}
+button.secondary{background:#555}button.danger{background:#b3261e}
+img.preview{display:block;width:180px;height:180px;object-fit:contain;background:#fff;border:1px solid #ddd;margin:10px auto}
+.product{border:1px solid #ddd;padding:12px;border-radius:9px;margin:12px 0;overflow-wrap:anywhere}
+.product img{width:110px;height:110px;object-fit:contain;background:#fff}
+.hidden{display:none}.note{font-size:13px;color:#555}.message{padding:10px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <header>
-  <h1>MaliMart</h1>
-  <div>Seller Panel</div>
+<h1>MaliMart Seller Panel</h1>
+<p>Upload and manage your products</p>
 </header>
 
 <main>
-<div class="card">
-<h2>Upload a Product</h2>
-<p class="note">Choose a clear product photo. MaliMart will fit it onto a clean white square background. Check the preview before uploading.</p>
+<div id="message" class="message hidden"></div>
 
+<section id="auth" class="card">
+<h2>Seller Account</h2>
+<input id="email" type="email" placeholder="Email address" autocomplete="email">
+<input id="password" type="password" placeholder="Password (minimum 6 characters)" autocomplete="current-password">
+<button id="loginBtn" type="button">Login</button>
+<button id="registerBtn" type="button">Create Seller Account</button>
+<p class="note">Use the same email to log in again. Keep your password private.</p>
+</section>
+
+<section id="panel" class="hidden">
+<div class="card">
+<h2>Seller Dashboard</h2>
+<p id="sellerEmail"></p>
+<button id="logoutBtn" class="secondary" type="button">Logout</button>
+</div>
+
+<div class="card">
+<h2>Upload Product</h2>
 <form id="productForm">
 <label for="productName">Product name</label>
-<input id="productName" required maxlength="100" placeholder="e.g. Men's casual shirt">
+<input id="productName" required maxlength="100" placeholder="e.g. Men's T-shirt">
 
 <label for="category">Category</label>
 <select id="category" required>
@@ -48,257 +58,353 @@ footer{text-align:center;color:#777;font-size:12px;padding:20px}
 <option value="Shoes">Shoes</option>
 </select>
 
-<label for="price">Your selling price (Rs.)</label>
-<input id="price" type="number" min="1" step="0.01" required placeholder="e.g. 500">
+<label for="price">Your product price (Rs.)</label>
+<input id="price" type="number" min="1" step="0.01" required placeholder="Enter your price">
 
 <label for="size">Size</label>
-<input id="size" required maxlength="50" placeholder="e.g. M, L, XL or 42">
+<select id="size" required>
+<option value="">Select size</option>
+<option value="Free Size">Free Size</option>
+<option value="XS">XS</option>
+<option value="S">S</option>
+<option value="M">M</option>
+<option value="L">L</option>
+<option value="XL">XL</option>
+<option value="XXL">XXL</option>
+<option value="38">38</option>
+<option value="39">39</option>
+<option value="40">40</option>
+<option value="41">41</option>
+<option value="42">42</option>
+<option value="43">43</option>
+<option value="44">44</option>
+</select>
 
 <label for="photo">Product photo</label>
 <input id="photo" type="file" accept="image/*" required>
-<p id="fileInfo" class="note">No photo selected yet.</p>
+<img id="preview" class="preview" alt="Product preview" hidden>
+<p class="note">Your photo will be resized onto a clean white square background. This does not automatically remove the original background.</p>
 
-<div id="previewArea">
-<h3>Photo Preview</h3>
-<div class="preview-grid">
-<div class="preview-item">
-<strong>Original photo</strong>
-<img id="originalPreview" class="preview-image" alt="Original product photo">
-</div>
-<div class="preview-item">
-<strong>Prepared photo</strong>
-<img id="editedPreview" class="preview-image" alt="Prepared product photo">
-</div>
-</div>
-<p class="note">The prepared photo has a white background and centered product. This is automatic formatting, not AI background removal.</p>
-</div>
+<label>
+<input id="inStock" type="checkbox" checked style="width:auto">
+Product is available in stock
+</label>
 
-<div id="message" role="status" aria-live="polite">Choose a photo to begin.</div>
-
-<button id="uploadButton" type="submit" disabled>Upload Product</button>
+<button id="uploadBtn" type="submit">Upload Product</button>
 </form>
 </div>
+
+<div class="card">
+<h2>My Products</h2>
+<button id="refreshBtn" class="secondary" type="button">Refresh Products</button>
+<div id="products">Loading products...</div>
+</div>
+</section>
 </main>
 
-<footer>MaliMart Seller Panel</footer>
+<script>
+(function(){
+"use strict";
 
-<script type="module">
-import { createClient } from
-'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL="https://adlovngoubhcdlinhcoz.supabase.co";
+const SUPABASE_KEY="sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const SUPABASE_URL = 'https://adlovngoubhcdlinhcoz.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let currentUser=null;
+let preparedImage=null;
+let originalFile=null;
 
-const form = document.getElementById('productForm');
-const photoInput = document.getElementById('photo');
-const fileInfo = document.getElementById('fileInfo');
-const message = document.getElementById('message');
-const previewArea = document.getElementById('previewArea');
-const originalPreview = document.getElementById('originalPreview');
-const editedPreview = document.getElementById('editedPreview');
-const uploadButton = document.getElementById('uploadButton');
-
-let preparedBlob = null;
-let originalURL = null;
-let editedURL = null;
-let processing = false;
-
-function showMessage(text, error = false) {
-  message.textContent = text;
-  message.style.background = error ? '#fee2e2' : '#dcfce7';
-  message.style.color = error ? '#991b1b' : '#166534';
+function showMessage(text,isError=false){
+ const el=$("message");
+ el.textContent=text;
+ el.classList.remove("hidden");
+ el.style.background=isError?"#fde8e7":"#eef6ee";
+ el.style.color=isError?"#9b1c1c":"#185c2c";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+function clearMessage(){
+ $("message").classList.add("hidden");
+}
+function setBusy(button,busy,text){
+ button.disabled=busy;
+ if(busy){
+  button.dataset.oldText=button.textContent;
+  button.textContent=text||"Please wait...";
+ }else{
+  button.textContent=button.dataset.oldText||button.textContent;
+ }
+}
+function friendlyError(error){
+ return error&&error.message?error.message:"An unexpected error occurred.";
+}
+function showPanel(user){
+ currentUser=user;
+ $("auth").classList.add("hidden");
+ $("panel").classList.remove("hidden");
+ $("sellerEmail").textContent="Logged in as: "+(user.email||"Seller");
+ loadProducts();
+}
+function showAuth(){
+ currentUser=null;
+ $("auth").classList.remove("hidden");
+ $("panel").classList.add("hidden");
+ $("products").textContent="";
 }
 
-function loadImage(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => resolve({img, url});
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('The image could not be opened. Please choose a JPG, PNG, or WebP photo.'));
-    };
-
-    img.src = url;
-  });
+async function checkSession(){
+ const {data,error}=await db.auth.getSession();
+ if(error){
+  showMessage(friendlyError(error),true);
+  return;
+ }
+ if(data.session) showPanel(data.session.user);
+ else showAuth();
 }
 
-function prepareImage(img) {
-  return new Promise((resolve, reject) => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1000;
-      canvas.height = 1000;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Your browser could not start photo editing.');
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 1000, 1000);
-
-      const padding = 80;
-      const maxSide = 1000 - padding * 2;
-      const scale = Math.min(
-        maxSide / img.naturalWidth,
-        maxSide / img.naturalHeight
-      );
-
-      const width = img.naturalWidth * scale;
-      const height = img.naturalHeight * scale;
-      const x = (1000 - width) / 2;
-      const y = (1000 - height) / 2;
-
-      ctx.drawImage(img, x, y, width, height);
-
-      canvas.toBlob(blob => {
-        if (!blob) {
-          reject(new Error('The browser could not prepare this photo. Please try another image.'));
-          return;
-        }
-        resolve(blob);
-      }, 'image/jpeg', 0.92);
-    } catch (err) {
-      reject(err);
-    }
-  });
-}
-
-photoInput.addEventListener('change', async () => {
-  preparedBlob = null;
-  uploadButton.disabled = true;
-  previewArea.style.display = 'none';
-
-  if (originalURL) URL.revokeObjectURL(originalURL);
-  if (editedURL) URL.revokeObjectURL(editedURL);
-  originalURL = null;
-  editedURL = null;
-
-  const file = photoInput.files?.[0];
-
-  if (!file) {
-    fileInfo.textContent = 'No photo selected yet.';
-    showMessage('Choose a photo to begin.');
-    return;
+$("registerBtn").addEventListener("click",async()=>{
+ clearMessage();
+ const email=$("email").value.trim();
+ const password=$("password").value;
+ if(!email||password.length<6){
+  showMessage("Enter a valid email and a password with at least 6 characters.",true);
+  return;
+ }
+ const button=$("registerBtn");
+ setBusy(button,true,"Creating account...");
+ try{
+  const {data,error}=await db.auth.signUp({email,password});
+  if(error) throw error;
+  if(data.session){
+   showPanel(data.session.user);
+   showMessage("Seller account created successfully.");
+  }else{
+   showMessage("Account created. Check your email for the confirmation link, then log in.");
   }
-
-  fileInfo.textContent =
-    'Selected: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
-
-  if (!file.type.startsWith('image/')) {
-    showMessage('That file is not an image. Please choose a photo.', true);
-    return;
-  }
-
-  if (file.size > 12 * 1024 * 1024) {
-    showMessage('This photo is larger than 12 MB. Please choose a smaller photo.', true);
-    return;
-  }
-
-  processing = true;
-  showMessage('Photo selected. Preparing your preview...');
-
-  try {
-    const result = await loadImage(file);
-    originalURL = result.url;
-    originalPreview.src = originalURL;
-
-    preparedBlob = await prepareImage(result.img);
-    editedURL = URL.createObjectURL(preparedBlob);
-    editedPreview.src = editedURL;
-
-    previewArea.style.display = 'block';
-    uploadButton.disabled = false;
-
-    showMessage('Photo prepared successfully! Check the preview above, then upload.');
-  } catch (err) {
-    preparedBlob = null;
-    showMessage('Photo processing failed: ' + (err?.message || 'Unknown error'), true);
-  } finally {
-    processing = false;
-  }
+ }catch(e){showMessage(friendlyError(e),true);}
+ finally{setBusy(button,false);}
 });
 
-form.addEventListener('submit', async event => {
-  event.preventDefault();
-
-  if (processing) {
-    showMessage('Please wait for photo preparation to finish.', true);
-    return;
-  }
-
-  if (!preparedBlob) {
-    showMessage('Please choose a photo and wait until the prepared preview appears.', true);
-    return;
-  }
-
-  uploadButton.disabled = true;
-  uploadButton.textContent = 'Uploading...';
-  showMessage('Uploading your product photo...');
-
-  try {
-    const name = document.getElementById('productName').value.trim();
-    const category = document.getElementById('category').value;
-    const price = Number(document.getElementById('price').value);
-    const size = document.getElementById('size').value.trim();
-
-    if (!name || !category || !size || !Number.isFinite(price) || price <= 0) {
-      throw new Error('Please fill in all product details correctly.');
-    }
-
-    const safeName = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 50) || 'product';
-
-    const path = Date.now() + '-' +
-      Math.random().toString(36).slice(2, 9) + '-' + safeName + '.jpg';
-
-    const {error: uploadError} = await supabase.storage
-      .from('product-images')
-      .upload(path, preparedBlob, {
-        contentType: 'image/jpeg',
-        upsert: false
-      });
-
-    if (uploadError) {
-      throw new Error('Photo upload failed: ' + uploadError.message);
-    }
-
-    const {data: publicData} = supabase.storage
-      .from('product-images')
-      .getPublicUrl(path);
-
-    const {error: insertError} = await supabase
-      .from('products')
-      .insert([{
-        name,
-        category,
-        price,
-        size,
-        image_url: publicData.publicUrl,
-        status: 'active',
-        stock: 'available'
-      }]);
-
-    if (insertError) {
-      throw new Error('Photo uploaded, but product saving failed: ' + insertError.message);
-    }
-
-    form.reset();
-    preparedBlob = null;
-    previewArea.style.display = 'none';
-    fileInfo.textContent = 'No photo selected yet.';
-    showMessage('Product uploaded successfully!');
-  } catch (err) {
-    showMessage(err?.message || 'Something went wrong while uploading.', true);
-  } finally {
-    uploadButton.textContent = 'Upload Product';
-    uploadButton.disabled = !preparedBlob;
-  }
+$("loginBtn").addEventListener("click",async()=>{
+ clearMessage();
+ const email=$("email").value.trim();
+ const password=$("password").value;
+ if(!email||!password){
+  showMessage("Enter your email and password.",true);
+  return;
+ }
+ const button=$("loginBtn");
+ setBusy(button,true,"Logging in...");
+ try{
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+  if(error) throw error;
+  showPanel(data.user);
+  showMessage("Login successful.");
+ }catch(e){showMessage(friendlyError(e),true);}
+ finally{setBusy(button,false);}
 });
+
+$("logoutBtn").addEventListener("click",async()=>{
+ clearMessage();
+ const {error}=await db.auth.signOut();
+ if(error){showMessage(friendlyError(error),true);return;}
+ showAuth();
+ showMessage("You have logged out.");
+});
+
+$("photo").addEventListener("change",async event=>{
+ clearMessage();
+ originalFile=event.target.files&&event.target.files[0];
+ preparedImage=null;
+ $("preview").hidden=true;
+ if(!originalFile) return;
+ if(!originalFile.type.startsWith("image/")){
+  showMessage("Please select an image file.",true);
+  event.target.value="";
+  return;
+ }
+ if(originalFile.size>10*1024*1024){
+  showMessage("Please choose an image smaller than 10 MB.",true);
+  event.target.value="";
+  originalFile=null;
+  return;
+ }
+ try{
+  const image=new Image();
+  const objectUrl=URL.createObjectURL(originalFile);
+  image.onload=()=>{
+   try{
+    const canvas=document.createElement("canvas");
+    canvas.width=1000;
+    canvas.height=1000;
+    const ctx=canvas.getContext("2d");
+    ctx.fillStyle="#ffffff";
+    ctx.fillRect(0,0,1000,1000);
+    const scale=Math.min(900/image.width,900/image.height);
+    const width=image.width*scale;
+    const height=image.height*scale;
+    ctx.drawImage(image,(1000-width)/2,(1000-height)/2,width,height);
+    canvas.toBlob(blob=>{
+     URL.revokeObjectURL(objectUrl);
+     if(!blob){
+      showMessage("Could not prepare this image. Please try another photo.",true);
+      return;
+     }
+     preparedImage=blob;
+     $("preview").src=URL.createObjectURL(blob);
+     $("preview").hidden=false;
+    },"image/jpeg",0.88);
+   }catch(e){
+    URL.revokeObjectURL(objectUrl);
+    showMessage("Could not prepare the image: "+friendlyError(e),true);
+   }
+  };
+  image.onerror=()=>{
+   URL.revokeObjectURL(objectUrl);
+   showMessage("Could not read this image. Please select another.",true);
+  };
+  image.src=objectUrl;
+ }catch(e){
+  showMessage(friendlyError(e),true);
+ }
+});
+
+$("productForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ clearMessage();
+ if(!currentUser){
+  showMessage("Please log in first.",true);
+  return;
+ }
+ const name=$("productName").value.trim();
+ const category=$("category").value;
+ const price=Number($("price").value);
+ const size=$("size").value;
+ const stock=$("inStock").checked;
+ if(!name||!category||!size||!Number.isFinite(price)||price<=0){
+  showMessage("Please complete all product details correctly.",true);
+  return;
+ }
+ if(!originalFile||!preparedImage){
+  showMessage("Choose a product photo and wait until its preview appears.",true);
+  return;
+ }
+
+ const button=$("uploadBtn");
+ setBusy(button,true,"Uploading product...");
+ try{
+  const safeName=originalFile.name
+   .replace(/\.[^.]+$/,"")
+   .replace(/[^a-zA-Z0-9_-]/g,"_")
+   .slice(0,50)||"product";
+  const path=currentUser.id+"/"+Date.now()+"_"+safeName+".jpg";
+
+  const {data:uploadData,error:uploadError}=await db.storage
+   .from("product-images")
+   .upload(path,preparedImage,{
+    contentType:"image/jpeg",
+    upsert:false
+   });
+  if(uploadError) throw new Error("Photo upload failed: "+uploadError.message);
+
+  const {data:urlData}=db.storage.from("product-images").getPublicUrl(uploadData.path);
+  const imageUrl=urlData.publicUrl;
+
+  const product={
+   seller_id:currentUser.id,
+   name:name,
+   category:category,
+   price:price,
+   size:size,
+   image_url:imageUrl,
+   stock:stock
+  };
+
+  const {error:insertError}=await db.from("products").insert(product);
+  if(insertError){
+   throw new Error("Photo uploaded, but product saving failed: "+insertError.message+
+    ". Check the products table columns and its RLS policy.");
+  }
+
+  showMessage("Product uploaded successfully. If your marketplace uses admin approval, wait for approval before it appears to customers.");
+  $("productForm").reset();
+  $("inStock").checked=true;
+  $("preview").hidden=true;
+  $("preview").removeAttribute("src");
+  originalFile=null;
+  preparedImage=null;
+  await loadProducts();
+ }catch(e){
+  showMessage(friendlyError(e),true);
+ }finally{
+  setBusy(button,false);
+ }
+});
+
+async function loadProducts(){
+ if(!currentUser) return;
+ $("products").textContent="Loading products...";
+ try{
+  const {data,error}=await db.from("products")
+   .select("id,name,category,price,size,image_url,stock,status,created_at")
+   .eq("seller_id",currentUser.id)
+   .order("created_at",{ascending:false});
+  if(error) throw error;
+  const container=$("products");
+  container.replaceChildren();
+  if(!data||data.length===0){
+   container.textContent="You have not uploaded any products yet.";
+   return;
+  }
+  data.forEach(product=>{
+   const card=document.createElement("div");
+   card.className="product";
+   if(product.image_url){
+    const img=document.createElement("img");
+    img.src=product.image_url;
+    img.alt=product.name||"Product";
+    img.loading="lazy";
+    card.appendChild(img);
+   }
+   const title=document.createElement("h3");
+   title.textContent=product.name||"Unnamed product";
+   card.appendChild(title);
+
+   const details=document.createElement("p");
+   details.textContent="Category: "+(product.category||"-")+
+    " | Price: Rs. "+(product.price??"-")+
+    " | Size: "+(product.size||"-");
+   card.appendChild(details);
+
+   const stockText=document.createElement("p");
+   stockText.textContent="Stock: "+(product.stock===true?"Available":product.stock===false?"Unavailable":"Not specified");
+   card.appendChild(stockText);
+
+   const status=document.createElement("p");
+   status.textContent="Status: "+(product.status||"Awaiting status");
+   card.appendChild(status);
+   container.appendChild(card);
+  });
+ }catch(e){
+  $("products").textContent="Could not load products: "+friendlyError(e);
+ }
+}
+$("refreshBtn").addEventListener("click",loadProducts);
+
+db.auth.onAuthStateChange((event,session)=>{
+ if(session&&session.user){
+  currentUser=session.user;
+  $("auth").classList.add("hidden");
+  $("panel").classList.remove("hidden");
+  $("sellerEmail").textContent="Logged in as: "+(session.user.email||"Seller");
+  if(event==="SIGNED_IN") loadProducts();
+ }else if(event==="SIGNED_OUT"){
+  showAuth();
+ }
+});
+
+checkSession();
+})();
 </script>
 </body>
 </html>
