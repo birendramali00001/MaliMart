@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MaliMart</title>
+<title>MaliMart | Local Marketplace</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#222}
@@ -11,52 +12,54 @@ header{background:#111827;color:white;padding:16px;text-align:center;position:st
 header h1{margin:0;font-size:25px}
 header p{margin:5px 0 0;font-size:13px;color:#d1d5db}
 .container{max-width:900px;margin:auto;padding:15px}
-.hero{background:white;border-radius:14px;padding:22px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
-.hero h2{margin-top:0}
+.hero,.cart{background:white;border-radius:14px;padding:20px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
+.hero h2,.cart h2{margin-top:0}
 .notice{background:#fff7ed;border-left:4px solid #f97316;padding:12px;border-radius:8px;font-size:14px}
 .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.product{background:white;border-radius:12px;padding:12px;box-shadow:0 2px 8px #00000010}
-.product .pic{height:120px;background:#eef2f7;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px}
-.product h3{font-size:16px;margin:10px 0 5px}
+.product{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;min-width:0}
+.product .pic{height:150px;background:#eef2f7;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;overflow:hidden}
+.product img{width:100%;height:100%;object-fit:cover}
+.product h3{font-size:16px;margin:10px 0 5px;overflow-wrap:anywhere}
 .price{font-weight:bold;font-size:17px}
-button{border:0;border-radius:8px;padding:10px 13px;background:#111827;color:white;cursor:pointer}
+button{border:0;border-radius:8px;padding:11px 13px;background:#111827;color:white;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
 button.secondary{background:#e5e7eb;color:#111827}
 form{display:grid;gap:10px}
-input,select,textarea{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
-.cart{background:white;border-radius:14px;padding:18px;margin-top:15px;box-shadow:0 2px 10px #00000012}
-.row{display:flex;justify-content:space-between;gap:10px;margin:7px 0}
-.total{font-size:19px;font-weight:bold;border-top:1px solid #ddd;padding-top:10px}
-.small{font-size:12px;color:#6b7280}
-footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0}
+.row span{overflow-wrap:anywhere}
+.total{font-size:19px;font-weight:bold;border-top:1px solid #ddd;padding-top:12px}
+.small{font-size:13px;color:#6b7280}
+.message{padding:10px;border-radius:8px;overflow-wrap:anywhere}
 .hidden{display:none}
+footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
 </style>
 </head>
 <body>
-
 <header>
   <h1>🛍️ MaliMart</h1>
   <p>Your local marketplace</p>
 </header>
 
-<div class="container">
-
+<main class="container">
 <section class="hero">
   <h2>Shop locally with MaliMart</h2>
   <p>Discover products from local sellers and get them delivered to you.</p>
   <div class="notice">
-    Delivery: <b>Rs. 45 inside Biratnagar</b> · <b>Rs. 65 outside Biratnagar</b>
+    Delivery: <b>Rs. 45 inside Biratnagar</b> ·
+    <b>Rs. 65 outside Biratnagar</b>
   </div>
 </section>
 
 <section class="hero">
   <h2>Products</h2>
+  <p id="catalogMessage" class="small">Connecting to MaliMart...</p>
   <div id="products" class="products"></div>
-  <p id="emptyProducts" class="small">Products will appear here when the marketplace catalog is connected.</p>
 </section>
 
 <section class="cart">
   <h2>🛒 Your Cart</h2>
-  <div id="cartItems"></div>
+  <div id="cartItems"><p class="small">Your cart is empty.</p></div>
   <div class="row"><span>Subtotal</span><span id="subtotal">Rs. 0</span></div>
   <div class="row"><span>Delivery</span><span id="delivery">Rs. 0</span></div>
   <div class="row total"><span>Total</span><span id="total">Rs. 0</span></div>
@@ -65,138 +68,394 @@ footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
 <section class="hero">
   <h2>Place Order</h2>
   <form id="orderForm">
-    <input id="customerName" required placeholder="Your name">
-    <input id="customerPhone" required placeholder="Phone number" inputmode="tel">
-    <input id="address" required placeholder="Delivery address">
+    <input id="customerName" required maxlength="100" placeholder="Your name">
+    <input id="customerPhone" required maxlength="20" placeholder="Phone number" inputmode="tel">
+    <input id="address" required maxlength="300" placeholder="Full delivery address">
     <select id="area" required>
       <option value="">Select delivery area</option>
       <option value="biratnagar">Inside Biratnagar</option>
       <option value="outside">Outside Biratnagar</option>
     </select>
-    <textarea id="notes" rows="3" placeholder="Order notes (optional)"></textarea>
-    <button type="submit">Place Order</button>
+    <textarea id="notes" maxlength="1000" rows="3" placeholder="Order notes (optional)"></textarea>
+    <button id="orderButton" type="submit">Place Order</button>
   </form>
-  <p id="orderMessage" class="small"></p>
+  <p id="orderMessage" class="message small" role="status"></p>
 </section>
 
 <section class="hero">
   <h2>Replacement Policy</h2>
-  <p>Eligible customers can request a replacement within <b>2 days after delivery</b>.</p>
-  <p><b>No cash refunds.</b> One replacement is provided for an eligible order.</p>
+  <p>Request an eligible replacement within <b>2 days after delivery</b>.</p>
+  <p><b>No cash refunds.</b> One replacement per eligible order.</p>
 </section>
+</main>
 
-</div>
+<footer>© 2026 MaliMart · Local marketplace</footer>
 
-<footer>
-  © 2026 MaliMart · Local marketplace
-</footer>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ============================================================
-// MALIMART SUPABASE CONFIGURATION
-// Enter these two values locally before connecting the backend.
-// Never send your key to anyone in chat.
-// ============================================================
-const SUPABASE_URL = "PASTE_YOUR_MALIMART_SUPABASE_URL_HERE";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_MALIMART_ANON_OR_PUBLISHABLE_KEY_HERE";
+"use strict";
 
-// Starter product catalog.
-// These can later be replaced by products stored in Supabase.
-const sampleProducts = [
-  {id:1,name:"Sample Product 1",price:100},
-  {id:2,name:"Sample Product 2",price:200},
-  {id:3,name:"Sample Product 3",price:300}
-];
+// Existing MaliMart Supabase project
+const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
 
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let products = [];
 let cart = [];
+let submitting = false;
 
-function money(n){
-  return "Rs. " + Number(n || 0).toLocaleString("en-IN");
+const $ = id => document.getElementById(id);
+
+function money(value) {
+  return "Rs. " + Number(value || 0).toLocaleString("en-IN");
 }
 
-function renderProducts(){
-  const box=document.getElementById("products");
-  const empty=document.getElementById("emptyProducts");
-  box.innerHTML="";
-  if(!sampleProducts.length){
-    empty.classList.remove("hidden");
+function firstValue(row, names) {
+  for (const name of names) {
+    if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
+      return row[name];
+    }
+  }
+  return null;
+}
+
+function normalizeProduct(row) {
+  const id = firstValue(row, ["id", "product_id", "uuid"]);
+  const name = firstValue(row, ["name", "product_name", "title"]);
+  const price = firstValue(row, [
+    "selling_price", "sale_price", "price", "final_price", "amount"
+  ]);
+  const image = firstValue(row, [
+    "image_url", "image", "photo_url", "product_image", "photo"
+  ]);
+  const stock = firstValue(row, ["stock", "quantity", "stock_quantity"]);
+  const available = firstValue(row, [
+    "is_available", "available", "in_stock"
+  ]);
+  const status = firstValue(row, ["status"]);
+
+  if (id === null || !name || price === null ||
+      !Number.isFinite(Number(price)) || Number(price) < 0) {
+    return null;
+  }
+
+  if (available === false || available === "false" ||
+      status === "unavailable" || status === "inactive" ||
+      status === "rejected" ||
+      (stock !== null && Number(stock) <= 0)) {
+    return null;
+  }
+
+  return {
+    id,
+    name: String(name),
+    price: Number(price),
+    image: image ? String(image) : ""
+  };
+}
+
+function showMessage(message, type) {
+  const el = $("orderMessage");
+  el.textContent = message;
+  el.style.background = type === "error" ? "#fef2f2" :
+                        type === "success" ? "#ecfdf5" : "#f3f4f6";
+  el.style.color = type === "error" ? "#991b1b" :
+                   type === "success" ? "#065f46" : "#374151";
+}
+
+async function loadProducts() {
+  const status = $("catalogMessage");
+  status.textContent = "Loading products...";
+
+  // Table name expected from the MaliMart database.
+  const { data, error } = await db.from("products").select("*");
+
+  if (error) {
+    console.error("Product loading error:", error);
+    status.textContent =
+      "Could not load products. Check the Products table name and its SELECT policy in Supabase.";
     return;
   }
-  empty.classList.add("hidden");
-  sampleProducts.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="product";
-    div.innerHTML=`
-      <div class="pic">Product image</div>
-      <h3>${p.name}</h3>
-      <div class="price">${money(p.price)}</div>
-      <br>
-      <button onclick="addToCart(${p.id})">Add to cart</button>
-    `;
-    box.appendChild(div);
+
+  products = (data || []).map(normalizeProduct).filter(Boolean);
+  renderProducts();
+
+  status.textContent = products.length
+    ? products.length + " product(s) available."
+    : "No available products yet. Products will appear here when sellers add them.";
+}
+
+function renderProducts() {
+  const box = $("products");
+  box.replaceChildren();
+
+  products.forEach(product => {
+    const card = document.createElement("article");
+    card.className = "product";
+
+    const pic = document.createElement("div");
+    pic.className = "pic";
+
+    if (product.image &&
+        /^https?:\/\//i.test(product.image)) {
+      const img = document.createElement("img");
+      img.src = product.image;
+      img.alt = product.name;
+      img.loading = "lazy";
+      img.onerror = () => { pic.textContent = "Image unavailable"; };
+      pic.appendChild(img);
+    } else {
+      pic.textContent = "Product image";
+    }
+
+    const title = document.createElement("h3");
+    title.textContent = product.name;
+
+    const price = document.createElement("div");
+    price.className = "price";
+    price.textContent = money(product.price);
+
+    const add = document.createElement("button");
+    add.type = "button";
+    add.textContent = "Add to cart";
+    add.addEventListener("click", () => addToCart(product.id));
+
+    card.append(pic, title, price);
+    card.appendChild(document.createElement("br"));
+    card.appendChild(add);
+    box.appendChild(card);
   });
 }
 
-function addToCart(id){
-  const product=sampleProducts.find(p=>p.id===id);
-  if(!product)return;
-  const existing=cart.find(p=>p.id===id);
-  if(existing) existing.qty++;
-  else cart.push({...product,qty:1});
+function addToCart(id) {
+  const product = products.find(p => String(p.id) === String(id));
+  if (!product) return;
+
+  const existing = cart.find(p => String(p.id) === String(id));
+  if (existing) existing.qty++;
+  else cart.push({ ...product, qty: 1 });
+
   renderCart();
 }
 
-function removeFromCart(id){
-  cart=cart.filter(p=>p.id!==id);
+function removeFromCart(id) {
+  cart = cart.filter(p => String(p.id) !== String(id));
   renderCart();
 }
 
-function renderCart(){
-  const box=document.getElementById("cartItems");
-  box.innerHTML="";
-  let subtotal=0;
-  cart.forEach(item=>{
-    const line=item.price*item.qty;
-    subtotal+=line;
-    const row=document.createElement("div");
-    row.className="row";
-    row.innerHTML=`
-      <span>${item.name} × ${item.qty}</span>
-      <span>${money(line)} <button class="secondary" onclick="removeFromCart(${item.id})">Remove</button></span>
-    `;
+function renderCart() {
+  const box = $("cartItems");
+  box.replaceChildren();
+  let subtotal = 0;
+
+  if (!cart.length) {
+    const empty = document.createElement("p");
+    empty.className = "small";
+    empty.textContent = "Your cart is empty.";
+    box.appendChild(empty);
+  }
+
+  cart.forEach(item => {
+    subtotal += item.price * item.qty;
+
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const label = document.createElement("span");
+    label.textContent = item.name + " × " + item.qty;
+
+    const right = document.createElement("span");
+    right.textContent = money(item.price * item.qty) + " ";
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "secondary";
+    remove.textContent = "Remove";
+    remove.addEventListener("click", () => removeFromCart(item.id));
+
+    right.appendChild(remove);
+    row.append(label, right);
     box.appendChild(row);
   });
-  const area=document.getElementById("area").value;
-  const delivery=cart.length ? (area==="biratnagar"?45:area==="outside"?65:0) : 0;
-  document.getElementById("subtotal").textContent=money(subtotal);
-  document.getElementById("delivery").textContent=money(delivery);
-  document.getElementById("total").textContent=money(subtotal+delivery);
+
+  const area = $("area").value;
+  const delivery = cart.length
+    ? (area === "biratnagar" ? 45 : area === "outside" ? 65 : 0)
+    : 0;
+
+  $("subtotal").textContent = money(subtotal);
+  $("delivery").textContent = money(delivery);
+  $("total").textContent = money(subtotal + delivery);
 }
 
-document.getElementById("area").addEventListener("change",renderCart);
+$("area").addEventListener("change", renderCart);
 
-document.getElementById("orderForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const msg=document.getElementById("orderMessage");
+async function insertOrder(order) {
+  // Try common table names and field layouts.
+  // The correct layout depends on the actual database schema.
+  const attempts = [
+    ["orders", {
+      customer_name: order.name,
+      customer_phone: order.phone,
+      address: order.address,
+      delivery_area: order.area,
+      notes: order.notes,
+      subtotal: order.subtotal,
+      delivery_fee: order.delivery,
+      total: order.total,
+      status: "pending"
+    }],
+    ["orders", {
+      customer_name: order.name,
+      phone: order.phone,
+      delivery_address: order.address,
+      area: order.area,
+      notes: order.notes,
+      total_amount: order.total,
+      delivery_charge: order.delivery,
+      status: "pending"
+    }],
+    ["orders", {
+      name: order.name,
+      phone: order.phone,
+      address: order.address,
+      area: order.area,
+      total: order.total,
+      status: "pending"
+    }]
+  ];
 
-  if(!cart.length){
-    msg.textContent="Please add at least one product to your cart.";
+  let lastError = null;
+
+  for (const [table, payload] of attempts) {
+    const result = await db.from(table).insert(payload).select("*").single();
+
+    if (!result.error) {
+      return { data: result.data, error: null };
+    }
+
+    lastError = result.error;
+
+    // Retry only when a column/layout mismatch is likely.
+    const message = String(lastError.message || "").toLowerCase();
+    const schemaIssue =
+      message.includes("column") ||
+      message.includes("schema cache") ||
+      message.includes("could not find") ||
+      message.includes("does not exist");
+
+    if (!schemaIssue) break;
+  }
+
+  return { data: null, error: lastError };
+}
+
+$("orderForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (submitting) return;
+
+  if (!cart.length) {
+    showMessage("Please add at least one product to your cart.", "error");
     return;
   }
 
-  if(SUPABASE_URL.includes("PASTE_") || SUPABASE_ANON_KEY.includes("PASTE_")){
-    msg.textContent="The MaliMart backend is not connected yet. Add the Supabase URL and key first.";
+  if (!$("area").value) {
+    showMessage("Please select your delivery area.", "error");
     return;
   }
 
-  // Backend order submission will be connected here after the database
-  // table/columns are confirmed. This prevents sending data to an
-  // incorrectly configured table.
-  msg.textContent="Backend connection is ready to be connected to the MaliMart orders table.";
+  const name = $("customerName").value.trim();
+  const phone = $("customerPhone").value.trim();
+  const address = $("address").value.trim();
+  const area = $("area").value;
+  const notes = $("notes").value.trim();
+
+  if (!name || !phone || !address) {
+    showMessage("Please complete your name, phone, and address.", "error");
+    return;
+  }
+
+  // Refresh prices from the database before accepting the order.
+  const { data: freshRows, error: refreshError } =
+    await db.from("products").select("*");
+
+  if (refreshError) {
+    showMessage("We couldn't verify product prices. Please try again later.", "error");
+    console.error(refreshError);
+    return;
+  }
+
+  const freshProducts = (freshRows || []).map(normalizeProduct).filter(Boolean);
+  const verifiedCart = [];
+
+  for (const item of cart) {
+    const fresh = freshProducts.find(p => String(p.id) === String(item.id));
+    if (!fresh) {
+      showMessage(
+        item.name + " is no longer available. Please refresh your cart.",
+        "error"
+      );
+      products = freshProducts;
+      renderProducts();
+      return;
+    }
+    verifiedCart.push({ ...fresh, qty: item.qty });
+  }
+
+  const subtotal = verifiedCart.reduce(
+    (sum, item) => sum + item.price * item.qty, 0
+  );
+  const delivery = area === "biratnagar" ? 45 : 65;
+  const total = subtotal + delivery;
+
+  submitting = true;
+  $("orderButton").disabled = true;
+  $("orderButton").textContent = "Submitting order...";
+  showMessage("Submitting your order...", "info");
+
+  try {
+    const result = await insertOrder({
+      name, phone, address, area, notes, subtotal, delivery, total
+    });
+
+    if (result.error) {
+      console.error("Order submission error:", result.error);
+      showMessage(
+        "Order was not confirmed. The database table or column names, or its INSERT security policy, need checking. Please don't submit repeatedly.",
+        "error"
+      );
+      return;
+    }
+
+    // Do not claim order items were saved separately without verifying
+    // the actual Order items table schema.
+    const saved = result.data || {};
+    const orderId = saved.id || saved.order_id || "";
+
+    showMessage(
+      "Order record saved successfully." +
+      (orderId ? " Order number: " + orderId + "." : "") +
+      " Please keep your phone available for confirmation. Product-item details must also be verified in the admin panel.",
+      "success"
+    );
+
+    cart = [];
+    renderCart();
+    $("orderForm").reset();
+    renderCart();
+  } catch (error) {
+    console.error(error);
+    showMessage("Something went wrong. Please try again later.", "error");
+  } finally {
+    submitting = false;
+    $("orderButton").disabled = false;
+    $("orderButton").textContent = "Place Order";
+  }
 });
 
-renderProducts();
 renderCart();
+loadProducts();
 </script>
 </body>
 </html>
