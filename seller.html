@@ -19,14 +19,14 @@ button:disabled{opacity:.6}
 button.secondary{background:#555}
 img.preview{display:block;width:180px;height:180px;object-fit:contain;background:#fff;border:1px solid #ddd;margin:10px auto}
 .product{border:1px solid #ddd;padding:12px;border-radius:9px;margin:12px 0;overflow-wrap:anywhere}
-.product img{width:110px;height:110px;object-fit:contain;background:#fff}
+.product img{display:block;width:140px;height:140px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:7px;margin-bottom:10px}
+.photo-fallback{width:140px;height:140px;display:flex;align-items:center;justify-content:center;text-align:center;background:#f1f1f1;color:#666;border-radius:7px;margin-bottom:10px;padding:10px;font-size:13px}
 .hidden{display:none}
 .note{font-size:13px;color:#555}
 .message{padding:10px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
-
 <header>
 <h1>MaliMart Seller Panel</h1>
 <p>Upload and manage your products</p>
@@ -54,7 +54,6 @@ img.preview{display:block;width:180px;height:180px;object-fit:contain;background
 <div class="card">
 <h2>Upload Product</h2>
 <form id="productForm">
-
 <label for="productName">Product name</label>
 <input id="productName" required maxlength="100" placeholder="e.g. Men's T-shirt">
 
@@ -151,8 +150,59 @@ function setBusy(button,busy,text){
  }
 }
 
+/* Handles public and signed Supabase Storage image URLs. */
+function getProductStoragePath(imageUrl){
+ try{
+  const pathname=new URL(imageUrl).pathname;
+  const markers=[
+   "/storage/v1/object/public/product-images/",
+   "/storage/v1/object/sign/product-images/"
+  ];
+
+  for(const marker of markers){
+   const index=pathname.indexOf(marker);
+   if(index!==-1){
+    return decodeURIComponent(pathname.slice(index+marker.length));
+   }
+  }
+ }catch(e){}
+ return null;
+}
+
+/* Supports Boolean, numeric and text stock values. */
+function stockLabel(value){
+ if(value===true) return "Available";
+ if(value===false) return "Unavailable";
+
+ if(value===null||value===undefined||value===""){
+  return "Not specified";
+ }
+
+ if(typeof value==="number"){
+  return value>0?"Available (quantity: "+value+")":"Unavailable";
+ }
+
+ const textValue=String(value).trim().toLowerCase();
+
+ if(["true","yes","available","in stock"].includes(textValue)){
+  return "Available";
+ }
+
+ if(["false","no","unavailable","out of stock"].includes(textValue)){
+  return "Unavailable";
+ }
+
+ if(/^\d+$/.test(textValue)){
+  const quantity=Number(textValue);
+  return quantity>0?"Available (quantity: "+quantity+")":"Unavailable";
+ }
+
+ return String(value);
+}
+
 async function loadCategories(){
  if(loadingCategories) return;
+
  loadingCategories=true;
  categoriesLoaded=false;
 
@@ -171,7 +221,7 @@ async function loadCategories(){
 
   if(!data||data.length===0){
    select.replaceChildren(new Option("No active categories",""));
-   showMessage("No active categories found. Activate Clothes and Shoes in your existing categories table.",true);
+   showMessage("No active categories found. Check that Clothes and Shoes are active.",true);
    return;
   }
 
@@ -202,6 +252,7 @@ async function loadCategories(){
 
 async function loadProducts(){
  if(!currentUser) return;
+
  $("products").textContent="Loading products...";
 
  try{
@@ -225,19 +276,61 @@ async function loadProducts(){
    const card=document.createElement("div");
    card.className="product";
 
+   const photoBox=document.createElement("div");
+
    if(p.image_url){
     const img=document.createElement("img");
-    img.src=p.image_url;
-    img.alt=p.name||"Product";
+    img.alt=p.name||"Product photo";
     img.loading="lazy";
-    card.appendChild(img);
+
+    let triedSignedUrl=false;
+
+    img.onerror=async()=>{
+     if(!triedSignedUrl){
+      triedSignedUrl=true;
+      const path=getProductStoragePath(p.image_url);
+
+      if(path){
+       try{
+        const {data:signedData,error:signedError}=await db.storage
+         .from("product-images")
+         .createSignedUrl(path,3600);
+
+        if(!signedError&&signedData&&signedData.signedUrl){
+         img.src=signedData.signedUrl;
+         return;
+        }
+       }catch(e){}
+      }
+     }
+
+     img.style.display="none";
+
+     if(!photoBox.querySelector(".photo-fallback")){
+      const fallback=document.createElement("div");
+      fallback.className="photo-fallback";
+      fallback.textContent="Photo unavailable. Check image storage access.";
+      photoBox.appendChild(fallback);
+     }
+    };
+
+    img.src=p.image_url;
+    photoBox.appendChild(img);
+   }else{
+    const fallback=document.createElement("div");
+    fallback.className="photo-fallback";
+    fallback.textContent="No photo URL saved for this product.";
+    photoBox.appendChild(fallback);
    }
+
+   card.appendChild(photoBox);
 
    const title=document.createElement("h3");
    title.textContent=p.name||"Unnamed product";
    card.appendChild(title);
 
    const related=Array.isArray(p.categories)?p.categories[0]:p.categories;
+
    const details=document.createElement("p");
    details.textContent=
     "Category: "+(related?.name||"Unknown")+
@@ -246,11 +339,11 @@ async function loadProducts(){
    card.appendChild(details);
 
    const stock=document.createElement("p");
-   stock.textContent="Stock: "+(p.stock===true?"Available":p.stock===false?"Unavailable":"Not specified");
+   stock.textContent="Stock: "+stockLabel(p.stock);
    card.appendChild(stock);
 
    const status=document.createElement("p");
-   status.textContent="Status: "+(p.status||"Awaiting status");
+   status.textContent="Status: "+(p.status||"Pending");
    card.appendChild(status);
 
    container.appendChild(card);
@@ -266,8 +359,12 @@ async function showPanel(user){
  $("auth").classList.add("hidden");
  $("panel").classList.remove("hidden");
  $("sellerEmail").textContent="Logged in as: "+(user.email||"Seller");
+
  await loadCategories();
- if(currentUser&&currentUser.id===user.id) await loadProducts();
+
+ if(currentUser&&currentUser.id===user.id){
+  await loadProducts();
+ }
 }
 
 function showAuth(){
@@ -280,16 +377,22 @@ function showAuth(){
 
 async function checkSession(){
  const {data,error}=await db.auth.getSession();
+
  if(error){
   showMessage(errText(error),true);
   return;
  }
- if(data.session) await showPanel(data.session.user);
- else showAuth();
+
+ if(data.session){
+  await showPanel(data.session.user);
+ }else{
+  showAuth();
+ }
 }
 
 $("registerBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const email=$("email").value.trim();
  const password=$("password").value;
 
@@ -320,6 +423,7 @@ $("registerBtn").addEventListener("click",async()=>{
 
 $("loginBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const email=$("email").value.trim();
  const password=$("password").value;
 
@@ -334,6 +438,7 @@ $("loginBtn").addEventListener("click",async()=>{
  try{
   const {data,error}=await db.auth.signInWithPassword({email,password});
   if(error) throw error;
+
   await showPanel(data.user);
   showMessage("Login successful.");
  }catch(e){
@@ -345,17 +450,21 @@ $("loginBtn").addEventListener("click",async()=>{
 
 $("logoutBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const {error}=await db.auth.signOut();
+
  if(error){
   showMessage(errText(error),true);
   return;
  }
+
  showAuth();
  showMessage("You have logged out.");
 });
 
 $("photo").addEventListener("change",event=>{
  clearMessage();
+
  originalFile=event.target.files&&event.target.files[0];
  preparedImage=null;
  $("preview").hidden=true;
@@ -390,6 +499,7 @@ $("photo").addEventListener("change",event=>{
    const canvas=document.createElement("canvas");
    canvas.width=1000;
    canvas.height=1000;
+
    const ctx=canvas.getContext("2d");
    ctx.fillStyle="#fff";
    ctx.fillRect(0,0,1000,1000);
@@ -397,6 +507,7 @@ $("photo").addEventListener("change",event=>{
    const scale=Math.min(900/img.width,900/img.height);
    const w=img.width*scale;
    const h=img.height*scale;
+
    ctx.drawImage(img,(1000-w)/2,(1000-h)/2,w,h);
 
    canvas.toBlob(blob=>{
@@ -412,6 +523,7 @@ $("photo").addEventListener("change",event=>{
     $("preview").src=previewUrl;
     $("preview").hidden=false;
    },"image/jpeg",0.88);
+
   }catch(e){
    URL.revokeObjectURL(objectUrl);
    showMessage("Image preparation failed: "+errText(e),true);
@@ -483,7 +595,6 @@ $("productForm").addEventListener("submit",async event=>{
    .from("product-images")
    .getPublicUrl(uploadData.path).data.publicUrl;
 
-  // Required UUID category and both price fields.
   const product={
    seller_id:currentUser.id,
    name:name,
@@ -500,11 +611,7 @@ $("productForm").addEventListener("submit",async event=>{
    .insert(product);
 
   if(insertError){
-   throw new Error(
-    "Photo uploaded, but product saving failed: "+
-    insertError.message+
-    ". The category_id and base_price fields are included."
-   );
+   throw new Error("Photo uploaded, but product saving failed: "+insertError.message);
   }
 
   showMessage("Product saved successfully! Category: "+categoryName);
