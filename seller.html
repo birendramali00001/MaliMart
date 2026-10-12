@@ -1,1 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MaliMart Seller Panel</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f4f6;color:#111827}
+header{background:#111827;color:white;padding:20px;text-align:center}
+main{max-width:600px;margin:20px auto;padding:16px}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 10px #0001}
+h2{margin-top:0}
+label{display:block;font-weight:bold;margin:14px 0 6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:16px}
+button{width:100%;margin-top:18px;padding:14px;background:#111827;color:white;border:0;border-radius:8px;font-size:16px}
+.note{color:#6b7280;font-size:13px;line-height:1.5}
+#message{overflow-wrap:anywhere;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+<h1>🛍️ MaliMart</h1>
+<p>Seller Panel</p>
+</header>
+<main>
+<div class="card">
+<h2>Add a Product</h2>
+<p class="note">Enter the product details carefully. Only clothes and shoes are enabled for now.</p>
 
+<form id="productForm">
+<label>Product name</label>
+<input id="name" required maxlength="100" placeholder="e.g. Men's shirt">
+
+<label>Category</label>
+<select id="category" required>
+<option value="">Select category</option>
+<option value="Clothes">Clothes</option>
+<option value="Shoes">Shoes</option>
+</select>
+
+<label>Product photo</label>
+<input id="photo" type="file" accept="image/*" required>
+
+<label>Selling price (Rs.)</label>
+<input id="price" type="number" min="1" step="1" required placeholder="Enter price">
+
+<label>Size</label>
+<input id="size" required maxlength="50" placeholder="e.g. M, L, XL or size 40">
+
+<label>Stock</label>
+<select id="stock" required>
+<option value="available">Available</option>
+<option value="unavailable">Out of stock</option>
+</select>
+
+<button id="submitButton" type="submit">Submit Product</button>
+</form>
+<p id="message" role="status"></p>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const form = document.getElementById("productForm");
+const message = document.getElementById("message");
+const button = document.getElementById("submitButton");
+
+form.addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const file = document.getElementById("photo").files[0];
+  const name = document.getElementById("name").value.trim();
+  const category = document.getElementById("category").value;
+  const price = Number(document.getElementById("price").value);
+  const size = document.getElementById("size").value.trim();
+  const stock = document.getElementById("stock").value;
+
+  if (!file || !name || !category || !size || price <= 0) {
+    message.textContent = "Please complete all fields correctly.";
+    return;
+  }
+
+  if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+    message.textContent = "Choose an image smaller than 5 MB.";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = "Submitting product...";
+
+  try {
+    const extension = file.name.split(".").pop().toLowerCase();
+    const filePath = Date.now() + "-" +
+      Math.random().toString(36).slice(2) + "." + extension;
+
+    const upload = await db.storage
+      .from("product-images")
+      .upload(filePath, file, { upsert: false });
+
+    if (upload.error) throw upload.error;
+
+    const imageResult = db.storage
+      .from("product-images")
+      .getPublicUrl(filePath);
+
+    const product = {
+      name: name,
+      category: category,
+      price: price,
+      size: size,
+      image_url: imageResult.data.publicUrl,
+      status: stock === "available" ? "active" : "unavailable",
+      stock: stock === "available" ? 1 : 0
+    };
+
+    const result = await db.from("products").insert(product);
+
+    if (result.error) throw result.error;
+
+    message.textContent =
+      "Product submitted successfully. Check the customer website to confirm it appears.";
+    form.reset();
+
+  } catch (error) {
+    console.error(error);
+    message.textContent =
+      "Could not submit: " + (error.message || "Database or storage permission error") +
+      ". The database columns and access policies may need adjustment.";
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
