@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,10 +13,13 @@ main{max-width:600px;margin:20px auto;padding:16px}
 .card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 10px #0001}
 h2{margin-top:0}
 label{display:block;font-weight:bold;margin:14px 0 6px}
-input,select,textarea{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:16px}
+input,select{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:16px}
 button{width:100%;margin-top:18px;padding:14px;background:#111827;color:white;border:0;border-radius:8px;font-size:16px}
+button:disabled{opacity:.55}
 .note{color:#6b7280;font-size:13px;line-height:1.5}
 #message{overflow-wrap:anywhere;line-height:1.5}
+#previewBox{display:none;margin-top:12px;padding:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;text-align:center}
+#preview{width:100%;max-width:260px;aspect-ratio:1;object-fit:contain;background:white;border:1px solid #e5e7eb;border-radius:8px}
 </style>
 </head>
 <body>
@@ -26,7 +30,7 @@ button{width:100%;margin-top:18px;padding:14px;background:#111827;color:white;bo
 <main>
 <div class="card">
 <h2>Add a Product</h2>
-<p class="note">Enter the product details carefully. Only clothes and shoes are enabled for now.</p>
+<p class="note">Enter product details carefully. Only clothes and shoes are enabled for now.</p>
 
 <form id="productForm">
 <label>Product name</label>
@@ -41,6 +45,13 @@ button{width:100%;margin-top:18px;padding:14px;background:#111827;color:white;bo
 
 <label>Product photo</label>
 <input id="photo" type="file" accept="image/*" required>
+<p class="note">Your photo will automatically be resized, centered, and placed on a clean white square background.</p>
+
+<div id="previewBox">
+<strong>Prepared product photo</strong><br>
+<img id="preview" alt="Prepared product preview">
+<p class="note">Check that the product is clear before submitting. This version does not use AI to remove the original photo background.</p>
+</div>
 
 <label>Selling price (Rs.)</label>
 <input id="price" type="number" min="1" step="1" required placeholder="Enter price">
@@ -62,47 +73,153 @@ button{width:100%;margin-top:18px;padding:14px;background:#111827;color:white;bo
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+"use strict";
+
 const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const form = document.getElementById("productForm");
 const message = document.getElementById("message");
 const button = document.getElementById("submitButton");
+const photoInput = document.getElementById("photo");
+const previewBox = document.getElementById("previewBox");
+const preview = document.getElementById("preview");
 
-form.addEventListener("submit", async function(event) {
+let preparedImage = null;
+let previewUrl = null;
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not open this photo. Please choose another."));
+    };
+
+    img.src = url;
+  });
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error("Could not prepare the photo."));
+    }, "image/jpeg", 0.9);
+  });
+}
+
+async function prepareProductImage(file) {
+  const img = await loadImage(file);
+  const side = 1000;
+  const canvas = document.createElement("canvas");
+
+  canvas.width = side;
+  canvas.height = side;
+
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, side, side);
+
+  // Fit the entire photo inside a square without cutting off the product.
+  const margin = 70;
+  const scale = Math.min(
+    (side - margin * 2) / img.naturalWidth,
+    (side - margin * 2) / img.naturalHeight
+  );
+
+  const width = img.naturalWidth * scale;
+  const height = img.naturalHeight * scale;
+  const x = (side - width) / 2;
+  const y = (side - height) / 2;
+
+  ctx.drawImage(img, x, y, width, height);
+
+  return await canvasToBlob(canvas);
+}
+
+photoInput.addEventListener("change", async () => {
+  preparedImage = null;
+  previewBox.style.display = "none";
+
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+  }
+
+  const file = photoInput.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    message.textContent = "Please select an image file.";
+    photoInput.value = "";
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    message.textContent = "Choose a photo smaller than 5 MB.";
+    photoInput.value = "";
+    return;
+  }
+
+  photoInput.disabled = true;
+  message.textContent = "Preparing your product photo...";
+
+  try {
+    preparedImage = await prepareProductImage(file);
+    previewUrl = URL.createObjectURL(preparedImage);
+    preview.src = previewUrl;
+    previewBox.style.display = "block";
+    message.textContent = "Photo prepared successfully. You can now submit the product.";
+  } catch (error) {
+    preparedImage = null;
+    message.textContent = error.message || "Could not prepare the photo.";
+  } finally {
+    photoInput.disabled = false;
+  }
+});
+
+form.addEventListener("submit", async event => {
   event.preventDefault();
 
-  const file = document.getElementById("photo").files[0];
   const name = document.getElementById("name").value.trim();
   const category = document.getElementById("category").value;
   const price = Number(document.getElementById("price").value);
   const size = document.getElementById("size").value.trim();
   const stock = document.getElementById("stock").value;
 
-  if (!file || !name || !category || !size || price <= 0) {
-    message.textContent = "Please complete all fields correctly.";
-    return;
-  }
-
-  if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-    message.textContent = "Choose an image smaller than 5 MB.";
+  if (!preparedImage || !name || !category || !size || price <= 0) {
+    message.textContent = "Complete all fields and wait until the photo preview is ready.";
     return;
   }
 
   button.disabled = true;
-  message.textContent = "Submitting product...";
+  message.textContent = "Uploading photo and saving product...";
+
+  let uploadedPath = null;
 
   try {
-    const extension = file.name.split(".").pop().toLowerCase();
-    const filePath = Date.now() + "-" +
-      Math.random().toString(36).slice(2) + "." + extension;
+    const filePath =
+      Date.now() + "-" +
+      Math.random().toString(36).slice(2) + ".jpg";
 
     const upload = await db.storage
       .from("product-images")
-      .upload(filePath, file, { upsert: false });
+      .upload(filePath, preparedImage, {
+        contentType: "image/jpeg",
+        upsert: false
+      });
 
     if (upload.error) throw upload.error;
+    uploadedPath = filePath;
 
     const imageResult = db.storage
       .from("product-images")
@@ -123,14 +240,27 @@ form.addEventListener("submit", async function(event) {
     if (result.error) throw result.error;
 
     message.textContent =
-      "Product submitted successfully. Check the customer website to confirm it appears.";
+      "Product submitted successfully! Check the MaliMart customer website.";
+
     form.reset();
+    preparedImage = null;
+    previewBox.style.display = "none";
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+    }
 
   } catch (error) {
     console.error(error);
+
     message.textContent =
-      "Could not submit: " + (error.message || "Database or storage permission error") +
-      ". The database columns and access policies may need adjustment.";
+      "Could not submit: " +
+      (error.message || "Database or storage error") +
+      ". We may need to adjust the Supabase table, storage bucket, or access policies.";
+
+    // Keep the uploaded image if the database insert failed.
+    // This avoids deleting an image that might be needed for recovery.
   } finally {
     button.disabled = false;
   }
