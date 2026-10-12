@@ -1,244 +1,426 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MaliMart Admin Dashboard</title>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
+    * { box-sizing: border-box; }
     body {
-      margin: 0;
-      background: #f4f6f8;
-      color: #222;
+      margin: 0; font-family: Arial, sans-serif;
+      background: #f4f6f9; color: #202938;
     }
-
     header {
-      background: #111827;
-      color: white;
-      padding: 18px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #123c2d; color: white; padding: 17px;
+      display: flex; justify-content: space-between;
+      align-items: center; gap: 12px; flex-wrap: wrap;
     }
-
-    header h1 {
-      margin: 0;
-      font-size: 22px;
+    header h2 { margin: 0; font-size: 22px; }
+    button, select {
+      cursor: pointer; border: 0; border-radius: 7px;
+      padding: 10px 12px; font-size: 14px;
     }
-
-    #logoutButton {
-      background: #dc2626;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 7px;
-      font-weight: bold;
+    .logout { background: #fff; color: #123c2d; }
+    .layout { display: flex; min-height: calc(100vh - 65px); }
+    nav {
+      width: 190px; flex-shrink: 0; background: white;
+      padding: 12px; border-right: 1px solid #ddd;
     }
-
-    main {
-      max-width: 1000px;
-      margin: auto;
-      padding: 20px;
+    nav button {
+      width: 100%; text-align: left; margin: 4px 0;
+      background: white; color: #263b32;
     }
-
-    .welcome,
-    .card,
-    .info {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    nav button.active, nav button:hover {
+      background: #dcefe5; font-weight: bold;
     }
-
-    .welcome h2,
-    .info h2 {
-      margin-top: 0;
+    main { padding: 20px; min-width: 0; flex: 1; }
+    h1 { font-size: 24px; margin-top: 0; }
+    .cards {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px; margin-bottom: 20px;
     }
-
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
+    .card, .panel {
+      background: white; border-radius: 10px;
+      padding: 16px; box-shadow: 0 1px 5px #0000000d;
     }
-
-    .card {
-      text-align: center;
+    .card strong { display: block; font-size: 25px; margin-top: 8px; }
+    .panel { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    th, td {
+      text-align: left; padding: 11px 9px;
+      border-bottom: 1px solid #e6e8eb; vertical-align: middle;
+      font-size: 14px;
     }
-
-    .card-icon {
-      font-size: 35px;
+    th { background: #f8faf9; }
+    .approve { background: #137547; color: white; margin: 2px; }
+    .reject { background: #b42318; color: white; margin: 2px; }
+    .refresh { background: #e2e8f0; color: #202938; }
+    .photo {
+      width: 55px; height: 55px; object-fit: cover;
+      border-radius: 6px; background: #eee;
     }
-
-    .card h3 {
-      margin: 8px 0;
-    }
-
-    .card p {
-      color: #666;
-    }
-
-    #message {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
+    .status { font-weight: bold; }
+    .notice { padding: 12px; margin: 10px 0; border-radius: 7px; }
+    .error { background: #fee4e2; color: #912018; }
+    .success { background: #dcfae6; color: #05603a; }
+    .muted { color: #667085; }
+    .hidden { display: none; }
+    @media(max-width:650px) {
+      .layout { display: block; }
+      nav {
+        width: 100%; display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-right: 0; border-bottom: 1px solid #ddd;
       }
-
-      .card-grid {
-        grid-template-columns: 1fr;
-      }
-
-      main {
-        padding: 12px;
-      }
+      main { padding: 13px; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      h1 { font-size: 21px; }
     }
   </style>
 </head>
-
 <body>
-
 <header>
-  <h1>🛒 MaliMart Admin</h1>
-  <button id="logoutButton">Logout</button>
+  <h2>MaliMart Admin</h2>
+  <button class="logout" id="logoutBtn">Log out</button>
 </header>
 
-<main>
+<div class="layout">
+  <nav>
+    <button class="active" data-page="dashboard">🏠 Dashboard</button>
+    <button data-page="products">📦 Products</button>
+    <button data-page="orders">🧾 Orders</button>
+    <button data-page="sellers">👥 Sellers</button>
+    <button data-page="replacements">🔄 Replacements</button>
+    <button data-page="categories">🏷️ Categories</button>
+  </nav>
 
-  <div class="welcome">
-    <h2>Welcome to MaliMart Admin</h2>
-    <p id="adminEmail">Checking login...</p>
-  </div>
-
-  <div class="card-grid">
-
-    <div class="card">
-      <div class="card-icon">📦</div>
-      <h3>Orders</h3>
-      <p>Manage customer orders</p>
+  <main>
+    <h1 id="pageTitle">Dashboard</h1>
+    <div id="message"></div>
+    <div id="summary" class="cards"></div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px">
+        <strong id="sectionTitle">Overview</strong>
+        <button class="refresh" id="refreshBtn">Refresh</button>
+      </div>
+      <div id="content">Checking your login...</div>
     </div>
-
-    <div class="card">
-      <div class="card-icon">🛍️</div>
-      <h3>Products</h3>
-      <p>Manage MaliMart products</p>
-    </div>
-
-    <div class="card">
-      <div class="card-icon">🏪</div>
-      <h3>Sellers</h3>
-      <p>Manage marketplace sellers</p>
-    </div>
-
-    <div class="card">
-      <div class="card-icon">🔄</div>
-      <h3>Replacements</h3>
-      <p>Manage replacement requests</p>
-    </div>
-
-  </div>
-
-  <div class="info">
-    <h2>Admin Control Center</h2>
-    <p>
-      Your MaliMart admin account is connected successfully.
-      Product, order, seller and replacement management will be
-      connected next.
-    </p>
-  </div>
-
-  <div id="message"></div>
-
-</main>
+  </main>
+</div>
 
 <script>
-  const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
+(() => {
+  const SUPABASE_URL = 'https://adlovngoubhcdlinhcoz.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp';
 
-  const SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
 
-  const adminEmail = document.getElementById("adminEmail");
-  const logoutButton = document.getElementById("logoutButton");
-  const message = document.getElementById("message");
+  let currentPage = 'dashboard';
+  let cachedProducts = [];
+  let cachedOrders = [];
 
-  async function checkAdminLogin() {
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;',
+      '"': '&quot;', "'": '&#39;'
+    })[char]);
+  }
+
+  function showMessage(text, type = 'error') {
+    $('message').innerHTML =
+      `<div class="notice ${type}">${escapeHTML(text)}</div>`;
+  }
+
+  function clearMessage() { $('message').innerHTML = ''; }
+
+  function money(value) {
+    const number = Number(value);
+    return 'Rs. ' + (Number.isFinite(number) ? number.toLocaleString('en-IN') : '0');
+  }
+
+  function dateText(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? escapeHTML(value) : date.toLocaleString();
+  }
+
+  function cell(value) {
+    return `<td>${escapeHTML(value ?? '—')}</td>`;
+  }
+
+  async function checkLogin() {
+    const { data, error } = await db.auth.getSession();
+    if (error || !data.session) {
+      location.replace('admin.html');
+      return false;
+    }
+    return true;
+  }
+
+  async function getRows(table) {
+    const { data, error } = await db.from(table).select('*');
+    if (error) throw new Error(table + ': ' + error.message);
+    return data || [];
+  }
+
+  function setActivePage(page) {
+    currentPage = page;
+    document.querySelectorAll('nav button').forEach(button => {
+      button.classList.toggle('active', button.dataset.page === page);
+    });
+    $('pageTitle').textContent = {
+      dashboard: 'Dashboard',
+      products: 'Product Management',
+      orders: 'Order Management',
+      sellers: 'Seller Records',
+      replacements: 'Replacement Requests',
+      categories: 'Categories'
+    }[page] || 'MaliMart Admin';
+    clearMessage();
+  }
+
+  async function loadDashboard() {
+    $('summary').innerHTML = '';
+    $('sectionTitle').textContent = 'Store overview';
+    $('content').innerHTML = 'Loading dashboard...';
+
     try {
+      const [products, orders, sellers, replacements] = await Promise.all([
+        getRows('products'),
+        getRows('orders'),
+        getRows('profile'),
+        getRows('replacement')
+      ]);
 
-      if (!window.supabase) {
-        adminEmail.textContent = "Supabase could not load.";
-        message.textContent = "Please refresh the page.";
-        return;
-      }
+      cachedProducts = products;
+      cachedOrders = orders;
 
-      const supabaseClient = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-      );
+      const pending = products.filter(p =>
+        String(p.status || '').toLowerCase() === 'pending'
+      ).length;
 
-      const {
-        data: { session },
-        error
-      } = await supabaseClient.auth.getSession();
+      const stats = [
+        ['Products', products.length],
+        ['Pending approval', pending],
+        ['Orders', orders.length],
+        ['Seller records', sellers.length],
+        ['Replacement records', replacements.length]
+      ];
 
-      if (error) {
-        adminEmail.textContent = "Login check failed.";
-        message.textContent = error.message;
-        return;
-      }
+      $('summary').innerHTML = stats.map(([label, value]) =>
+        `<div class="card">${escapeHTML(label)}<strong>${value}</strong></div>`
+      ).join('');
 
-      if (!session) {
-        window.location.href = "admin.html";
-        return;
-      }
-
-      adminEmail.textContent =
-        "Logged in as: " + session.user.email;
-
-      message.textContent = "Admin dashboard loaded successfully.";
-
-      logoutButton.addEventListener("click", async function() {
-
-        logoutButton.disabled = true;
-        logoutButton.textContent = "Logging out...";
-
-        const { error } =
-          await supabaseClient.auth.signOut();
-
-        if (error) {
-          alert("Logout failed. Please try again.");
-          logoutButton.disabled = false;
-          logoutButton.textContent = "Logout";
-          return;
-        }
-
-        window.location.href = "admin.html";
-      });
-
+      $('content').innerHTML = `
+        <p>Welcome to your MaliMart admin panel.</p>
+        <p>Review pending products before making them available to customers.</p>
+        <button class="approve" data-goto="products">Review Products</button>
+        <button class="refresh" data-goto="orders">View Orders</button>
+      `;
     } catch (error) {
-
-      adminEmail.textContent = "Dashboard error.";
-      message.textContent = error.message;
-
+      $('content').innerHTML =
+        '<p>Dashboard could not load all sections.</p><p class="muted">Check the message above for the exact table or permission error.</p>';
+      showMessage(error.message);
     }
   }
 
-  checkAdminLogin();
-</script>
+  function productTable(products) {
+    if (!products.length) return '<p>No products found.</p>';
 
+    return `<table>
+      <thead><tr>
+        <th>Photo</th><th>Product</th><th>Category</th>
+        <th>Price</th><th>Size</th><th>Stock</th>
+        <th>Status</th><th>Actions</th>
+      </tr></thead><tbody>
+      ${products.map(p => {
+        const price = p.price ?? p.base_price ?? 0;
+        const stock = p.stock_available ?? p.stock ?? '—';
+        const category = p.category ?? p.category_id ?? '—';
+        const status = String(p.status ?? 'Unknown');
+        const pending = status.toLowerCase() === 'pending';
+        const photo = p.image_url
+          ? `<img class="photo" src="${escapeHTML(p.image_url)}" alt="Product" loading="lazy">`
+          : 'No photo';
+        return `<tr>
+          <td>${photo}</td>
+          <td><strong>${escapeHTML(p.name)}</strong><br><small>${escapeHTML(p.id)}</small></td>
+          ${cell(category)}
+          ${cell(money(price))}
+          ${cell(p.size)}
+          ${cell(stock)}
+          <td class="status">${escapeHTML(status)}</td>
+          <td>
+            ${pending
+              ? `<button class="approve" data-action="approve" data-id="${escapeHTML(p.id)}">Approve</button>
+                 <button class="reject" data-action="reject" data-id="${escapeHTML(p.id)}">Reject</button>`
+              : `<button class="refresh" data-action="approve" data-id="${escapeHTML(p.id)}">Approve</button>
+                 <button class="reject" data-action="reject" data-id="${escapeHTML(p.id)}">Reject</button>`
+            }
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+
+  async function loadProducts() {
+    $('summary').innerHTML = '';
+    $('sectionTitle').textContent = 'Products awaiting review and all listed products';
+    $('content').innerHTML = 'Loading products...';
+
+    try {
+      cachedProducts = await getRows('products');
+      const pending = cachedProducts.filter(p =>
+        String(p.status || '').toLowerCase() === 'pending'
+      );
+      $('summary').innerHTML = `
+        <div class="card">All products<strong>${cachedProducts.length}</strong></div>
+        <div class="card">Pending<strong>${pending.length}</strong></div>
+        <div class="card">Approved<strong>${cachedProducts.filter(p => String(p.status || '').toLowerCase() === 'approved').length}</strong></div>
+      `;
+      $('content').innerHTML = productTable(cachedProducts);
+    } catch (error) {
+      $('content').innerHTML = 'Products could not be loaded.';
+      showMessage(error.message);
+    }
+  }
+
+  async function changeProductStatus(id, status) {
+    if (!confirm(`Set this product's status to "${status}"?`)) return;
+
+    clearMessage();
+    try {
+      const { data, error } = await db.from('products')
+        .update({ status })
+        .eq('id', id)
+        .select('id,status');
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('No product was updated. Check the admin update policy (RLS) in Supabase.');
+      }
+
+      showMessage('Product status updated to ' + status + '.', 'success');
+      await loadProducts();
+    } catch (error) {
+      showMessage('Could not update product status: ' + error.message +
+        '. Check Supabase RLS/update permissions and the allowed status values.');
+    }
+  }
+
+  async function loadOrders() {
+    $('summary').innerHTML = '';
+    $('sectionTitle').textContent = 'Customer orders';
+    $('content').innerHTML = 'Loading orders...';
+
+    try {
+      cachedOrders = await getRows('orders');
+      $('summary').innerHTML =
+        `<div class="card">Total orders<strong>${cachedOrders.length}</strong></div>`;
+      if (!cachedOrders.length) {
+        $('content').innerHTML = '<p>No orders found yet.</p>';
+        return;
+      }
+
+      $('content').innerHTML = `<table><thead><tr>
+        <th>Order ID</th><th>Customer ID</th><th>Delivery area</th>
+        <th>Delivery fee</th><th>Total</th><th>Payment</th>
+        <th>Payment status</th><th>Order status</th><th>Created</th><th>Delivered</th>
+      </tr></thead><tbody>${cachedOrders.map(o => `<tr>
+        ${cell(o.id)}${cell(o.customer_id)}${cell(o.delivery_area)}
+        ${cell(money(o.delivery_fee))}${cell(money(o.total))}
+        ${cell(o.payment_method)}${cell(o.payment_status)}
+        ${cell(o.status)}${cell(dateText(o.created_at))}${cell(dateText(o.delivered_at))}
+      </tr>`).join('')}</tbody></table>`;
+    } catch (error) {
+      $('content').innerHTML = 'Orders could not be loaded.';
+      showMessage(error.message);
+    }
+  }
+
+  async function loadGenericTable(table, title) {
+    $('summary').innerHTML = '';
+    $('sectionTitle').textContent = title;
+    $('content').innerHTML = 'Loading records...';
+
+    try {
+      const rows = await getRows(table);
+      if (!rows.length) {
+        $('content').innerHTML = '<p>No records found.</p>';
+        return;
+      }
+
+      const keys = [...new Set(rows.flatMap(row => Object.keys(row)))];
+      $('content').innerHTML = `<table><thead><tr>
+        ${keys.map(k => `<th>${escapeHTML(k.replaceAll('_', ' '))}</th>`).join('')}
+      </tr></thead><tbody>${rows.map(row => `<tr>${keys.map(key => {
+        const value = row[key];
+        if (value && typeof value === 'object') {
+          return cell(JSON.stringify(value));
+        }
+        return cell(value);
+      }).join('')}</tr>`).join('')}</tbody></table>`;
+      $('summary').innerHTML =
+        `<div class="card">${escapeHTML(title)}<strong>${rows.length}</strong></div>`;
+    } catch (error) {
+      $('content').innerHTML = 'Records could not be loaded.';
+      showMessage(error.message);
+    }
+  }
+
+  async function renderPage() {
+    setActivePage(currentPage);
+    if (!await checkLogin()) return;
+
+    if (currentPage === 'dashboard') return loadDashboard();
+    if (currentPage === 'products') return loadProducts();
+    if (currentPage === 'orders') return loadOrders();
+    if (currentPage === 'sellers') return loadGenericTable('profile', 'Seller records');
+    if (currentPage === 'replacements') return loadGenericTable('replacement', 'Replacement requests');
+    if (currentPage === 'categories') return loadGenericTable('categories', 'Product categories');
+  }
+
+  document.querySelectorAll('nav button').forEach(button => {
+    button.addEventListener('click', () => {
+      currentPage = button.dataset.page;
+      renderPage();
+    });
+  });
+
+  $('refreshBtn').addEventListener('click', renderPage);
+
+  $('content').addEventListener('click', event => {
+    const actionButton = event.target.closest('[data-action]');
+    const gotoButton = event.target.closest('[data-goto]');
+
+    if (gotoButton) {
+      currentPage = gotoButton.dataset.goto;
+      renderPage();
+      return;
+    }
+
+    if (actionButton) {
+      const status = actionButton.dataset.action === 'approve' ? 'Approved' : 'Rejected';
+      changeProductStatus(actionButton.dataset.id, status);
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    const { error } = await db.auth.signOut();
+    if (error) {
+      showMessage('Logout failed: ' + error.message);
+      return;
+    }
+    location.replace('admin.html');
+  });
+
+  checkLogin().then(ok => {
+    if (ok) renderPage();
+  });
+})();
+</script>
 </body>
 </html>
