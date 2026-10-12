@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,20 +6,26 @@
 <title>MaliMart Seller Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#f3f5f7;margin:0;color:#222}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f3f5f7;margin:0;color:#222}
 header{background:#087b45;color:white;padding:18px;text-align:center}
 main{max-width:700px;margin:20px auto;padding:12px}
 .card{background:white;padding:18px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 9px #0001}
-h2{margin-top:0;color:#087b45}input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:7px;font-size:16px}
+h2{margin-top:0;color:#087b45}
+input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:7px;font-size:16px}
 button{background:#087b45;color:white;border:0;font-weight:bold;cursor:pointer}
-button.secondary{background:#555}button.danger{background:#b3261e}
+button:disabled{opacity:.6}
+button.secondary{background:#555}
 img.preview{display:block;width:180px;height:180px;object-fit:contain;background:#fff;border:1px solid #ddd;margin:10px auto}
 .product{border:1px solid #ddd;padding:12px;border-radius:9px;margin:12px 0;overflow-wrap:anywhere}
 .product img{width:110px;height:110px;object-fit:contain;background:#fff}
-.hidden{display:none}.note{font-size:13px;color:#555}.message{padding:10px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere}
+.hidden{display:none}
+.note{font-size:13px;color:#555}
+.message{padding:10px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
+
 <header>
 <h1>MaliMart Seller Panel</h1>
 <p>Upload and manage your products</p>
@@ -48,14 +53,13 @@ img.preview{display:block;width:180px;height:180px;object-fit:contain;background
 <div class="card">
 <h2>Upload Product</h2>
 <form id="productForm">
+
 <label for="productName">Product name</label>
 <input id="productName" required maxlength="100" placeholder="e.g. Men's T-shirt">
 
 <label for="category">Category</label>
 <select id="category" required>
-<option value="">Select category</option>
-<option value="Clothes">Clothes</option>
-<option value="Shoes">Shoes</option>
+<option value="">Loading categories...</option>
 </select>
 
 <label for="price">Your product price (Rs.)</label>
@@ -83,7 +87,7 @@ img.preview{display:block;width:180px;height:180px;object-fit:contain;background
 <label for="photo">Product photo</label>
 <input id="photo" type="file" accept="image/*" required>
 <img id="preview" class="preview" alt="Product preview" hidden>
-<p class="note">Your photo will be resized onto a clean white square background. This does not automatically remove the original background.</p>
+<p class="note">Photos are resized onto a clean white square background. The original background is not automatically removed.</p>
 
 <label>
 <input id="inStock" type="checkbox" checked style="width:auto">
@@ -111,9 +115,11 @@ const SUPABASE_KEY="sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const $=id=>document.getElementById(id);
+
 let currentUser=null;
 let preparedImage=null;
 let originalFile=null;
+let categoriesLoaded=false;
 
 function showMessage(text,isError=false){
  const el=$("message");
@@ -123,9 +129,15 @@ function showMessage(text,isError=false){
  el.style.color=isError?"#9b1c1c":"#185c2c";
  window.scrollTo({top:0,behavior:"smooth"});
 }
+
 function clearMessage(){
  $("message").classList.add("hidden");
 }
+
+function friendlyError(error){
+ return error&&error.message?error.message:"An unexpected error occurred.";
+}
+
 function setBusy(button,busy,text){
  button.disabled=busy;
  if(busy){
@@ -135,18 +147,66 @@ function setBusy(button,busy,text){
   button.textContent=button.dataset.oldText||button.textContent;
  }
 }
-function friendlyError(error){
- return error&&error.message?error.message:"An unexpected error occurred.";
+
+async function loadCategories(){
+ const select=$("category");
+ select.replaceChildren(new Option("Loading categories...",""));
+ select.disabled=true;
+ categoriesLoaded=false;
+
+ try{
+  const {data,error}=await db
+   .from("categories")
+   .select("id,name,active")
+   .eq("active",true)
+   .order("name");
+
+  if(error) throw error;
+
+  if(!data||data.length===0){
+   select.replaceChildren(new Option("No active categories found",""));
+   showMessage("No active categories were found. Activate Clothes and Shoes in your existing categories table.",true);
+   return;
+  }
+
+  select.replaceChildren(new Option("Select category",""));
+
+  data.forEach(category=>{
+   if(!category.id||!category.name) return;
+   select.add(new Option(category.name,category.id));
+  });
+
+  if(select.options.length<=1){
+   select.replaceChildren(new Option("No usable categories found",""));
+   showMessage("The categories table has no usable category IDs.",true);
+   return;
+  }
+
+  select.disabled=false;
+  categoriesLoaded=true;
+
+ }catch(error){
+  select.replaceChildren(new Option("Could not load categories",""));
+  showMessage("Could not load categories: "+friendlyError(error),true);
+ }
 }
-function showPanel(user){
+
+async function showPanel(user){
  currentUser=user;
  $("auth").classList.add("hidden");
  $("panel").classList.remove("hidden");
  $("sellerEmail").textContent="Logged in as: "+(user.email||"Seller");
- loadProducts();
+
+ await loadCategories();
+
+ if(currentUser&&currentUser.id===user.id){
+  await loadProducts();
+ }
 }
+
 function showAuth(){
  currentUser=null;
+ categoriesLoaded=false;
  $("auth").classList.remove("hidden");
  $("panel").classList.add("hidden");
  $("products").textContent="";
@@ -158,133 +218,178 @@ async function checkSession(){
   showMessage(friendlyError(error),true);
   return;
  }
- if(data.session) showPanel(data.session.user);
+ if(data.session) await showPanel(data.session.user);
  else showAuth();
 }
 
 $("registerBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const email=$("email").value.trim();
  const password=$("password").value;
+
  if(!email||password.length<6){
   showMessage("Enter a valid email and a password with at least 6 characters.",true);
   return;
  }
+
  const button=$("registerBtn");
  setBusy(button,true,"Creating account...");
+
  try{
   const {data,error}=await db.auth.signUp({email,password});
   if(error) throw error;
+
   if(data.session){
-   showPanel(data.session.user);
+   await showPanel(data.session.user);
    showMessage("Seller account created successfully.");
   }else{
    showMessage("Account created. Check your email for the confirmation link, then log in.");
   }
- }catch(e){showMessage(friendlyError(e),true);}
- finally{setBusy(button,false);}
+ }catch(e){
+  showMessage(friendlyError(e),true);
+ }finally{
+  setBusy(button,false);
+ }
 });
 
 $("loginBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const email=$("email").value.trim();
  const password=$("password").value;
+
  if(!email||!password){
   showMessage("Enter your email and password.",true);
   return;
  }
+
  const button=$("loginBtn");
  setBusy(button,true,"Logging in...");
+
  try{
   const {data,error}=await db.auth.signInWithPassword({email,password});
   if(error) throw error;
-  showPanel(data.user);
+
+  await showPanel(data.user);
   showMessage("Login successful.");
- }catch(e){showMessage(friendlyError(e),true);}
- finally{setBusy(button,false);}
+ }catch(e){
+  showMessage(friendlyError(e),true);
+ }finally{
+  setBusy(button,false);
+ }
 });
 
 $("logoutBtn").addEventListener("click",async()=>{
  clearMessage();
+
  const {error}=await db.auth.signOut();
- if(error){showMessage(friendlyError(error),true);return;}
+
+ if(error){
+  showMessage(friendlyError(error),true);
+  return;
+ }
+
  showAuth();
  showMessage("You have logged out.");
 });
 
-$("photo").addEventListener("change",async event=>{
+$("photo").addEventListener("change",event=>{
  clearMessage();
+
  originalFile=event.target.files&&event.target.files[0];
  preparedImage=null;
  $("preview").hidden=true;
+ $("preview").removeAttribute("src");
+
  if(!originalFile) return;
+
  if(!originalFile.type.startsWith("image/")){
   showMessage("Please select an image file.",true);
   event.target.value="";
+  originalFile=null;
   return;
  }
+
  if(originalFile.size>10*1024*1024){
   showMessage("Please choose an image smaller than 10 MB.",true);
   event.target.value="";
   originalFile=null;
   return;
  }
- try{
-  const image=new Image();
-  const objectUrl=URL.createObjectURL(originalFile);
-  image.onload=()=>{
-   try{
-    const canvas=document.createElement("canvas");
-    canvas.width=1000;
-    canvas.height=1000;
-    const ctx=canvas.getContext("2d");
-    ctx.fillStyle="#ffffff";
-    ctx.fillRect(0,0,1000,1000);
-    const scale=Math.min(900/image.width,900/image.height);
-    const width=image.width*scale;
-    const height=image.height*scale;
-    ctx.drawImage(image,(1000-width)/2,(1000-height)/2,width,height);
-    canvas.toBlob(blob=>{
-     URL.revokeObjectURL(objectUrl);
-     if(!blob){
-      showMessage("Could not prepare this image. Please try another photo.",true);
-      return;
-     }
-     preparedImage=blob;
-     $("preview").src=URL.createObjectURL(blob);
-     $("preview").hidden=false;
-    },"image/jpeg",0.88);
-   }catch(e){
+
+ const objectUrl=URL.createObjectURL(originalFile);
+ const image=new Image();
+
+ image.onload=()=>{
+  try{
+   const canvas=document.createElement("canvas");
+   canvas.width=1000;
+   canvas.height=1000;
+
+   const ctx=canvas.getContext("2d");
+   ctx.fillStyle="#ffffff";
+   ctx.fillRect(0,0,1000,1000);
+
+   const scale=Math.min(900/image.width,900/image.height);
+   const width=image.width*scale;
+   const height=image.height*scale;
+
+   ctx.drawImage(image,(1000-width)/2,(1000-height)/2,width,height);
+
+   canvas.toBlob(blob=>{
     URL.revokeObjectURL(objectUrl);
-    showMessage("Could not prepare the image: "+friendlyError(e),true);
-   }
-  };
-  image.onerror=()=>{
+
+    if(!blob){
+     showMessage("Could not prepare this image. Please try another photo.",true);
+     return;
+    }
+
+    preparedImage=blob;
+    $("preview").src=URL.createObjectURL(blob);
+    $("preview").hidden=false;
+   },"image/jpeg",0.88);
+
+  }catch(e){
    URL.revokeObjectURL(objectUrl);
-   showMessage("Could not read this image. Please select another.",true);
-  };
-  image.src=objectUrl;
- }catch(e){
-  showMessage(friendlyError(e),true);
- }
+   showMessage("Could not prepare the image: "+friendlyError(e),true);
+  }
+ };
+
+ image.onerror=()=>{
+  URL.revokeObjectURL(objectUrl);
+  showMessage("Could not read this image. Please select another.",true);
+ };
+
+ image.src=objectUrl;
 });
 
 $("productForm").addEventListener("submit",async event=>{
  event.preventDefault();
  clearMessage();
+
  if(!currentUser){
   showMessage("Please log in first.",true);
   return;
  }
+
+ if(!categoriesLoaded){
+  showMessage("Categories have not loaded. Refresh the page or log in again.",true);
+  return;
+ }
+
  const name=$("productName").value.trim();
- const category=$("category").value;
+ const categoryId=$("category").value;
+ const categoryName=$("category").selectedOptions[0]?.textContent||"";
  const price=Number($("price").value);
  const size=$("size").value;
  const stock=$("inStock").checked;
- if(!name||!category||!size||!Number.isFinite(price)||price<=0){
+
+ if(!name||!categoryId||!size||!Number.isFinite(price)||price<=0){
   showMessage("Please complete all product details correctly.",true);
   return;
  }
+
  if(!originalFile||!preparedImage){
   showMessage("Choose a product photo and wait until its preview appears.",true);
   return;
@@ -292,11 +397,15 @@ $("productForm").addEventListener("submit",async event=>{
 
  const button=$("uploadBtn");
  setBusy(button,true,"Uploading product...");
+
+ let uploadedPath=null;
+
  try{
   const safeName=originalFile.name
    .replace(/\.[^.]+$/,"")
    .replace(/[^a-zA-Z0-9_-]/g,"_")
    .slice(0,50)||"product";
+
   const path=currentUser.id+"/"+Date.now()+"_"+safeName+".jpg";
 
   const {data:uploadData,error:uploadError}=await db.storage
@@ -305,35 +414,56 @@ $("productForm").addEventListener("submit",async event=>{
     contentType:"image/jpeg",
     upsert:false
    });
-  if(uploadError) throw new Error("Photo upload failed: "+uploadError.message);
 
-  const {data:urlData}=db.storage.from("product-images").getPublicUrl(uploadData.path);
+  if(uploadError){
+   throw new Error("Photo upload failed: "+uploadError.message);
+  }
+
+  uploadedPath=uploadData.path;
+
+  const {data:urlData}=db.storage
+   .from("product-images")
+   .getPublicUrl(uploadedPath);
+
   const imageUrl=urlData.publicUrl;
 
+  // category_id is the UUID from the existing categories table.
   const product={
    seller_id:currentUser.id,
    name:name,
-   category:category,
+   category_id:categoryId,
    price:price,
    size:size,
    image_url:imageUrl,
    stock:stock
   };
 
-  const {error:insertError}=await db.from("products").insert(product);
+  const {error:insertError}=await db
+   .from("products")
+   .insert(product);
+
   if(insertError){
-   throw new Error("Photo uploaded, but product saving failed: "+insertError.message+
-    ". Check the products table columns and its RLS policy.");
+   throw new Error(
+    "Photo uploaded, but product saving failed: "+
+    insertError.message+
+    ". The category UUID is now being supplied. Any remaining error will identify the next database requirement."
+   );
   }
 
-  showMessage("Product uploaded successfully. If your marketplace uses admin approval, wait for approval before it appears to customers.");
+  showMessage(
+   "Product uploaded successfully! Category: "+categoryName+
+   ". If admin approval is enabled, wait for approval before it appears to customers."
+  );
+
   $("productForm").reset();
   $("inStock").checked=true;
   $("preview").hidden=true;
   $("preview").removeAttribute("src");
   originalFile=null;
   preparedImage=null;
+
   await loadProducts();
+
  }catch(e){
   showMessage(friendlyError(e),true);
  }finally{
@@ -343,22 +473,30 @@ $("productForm").addEventListener("submit",async event=>{
 
 async function loadProducts(){
  if(!currentUser) return;
+
  $("products").textContent="Loading products...";
+
  try{
-  const {data,error}=await db.from("products")
-   .select("id,name,category,price,size,image_url,stock,status,created_at")
+  const {data,error}=await db
+   .from("products")
+   .select("id,name,category_id,price,size,image_url,stock,status,created_at,categories(name)")
    .eq("seller_id",currentUser.id)
    .order("created_at",{ascending:false});
+
   if(error) throw error;
+
   const container=$("products");
   container.replaceChildren();
+
   if(!data||data.length===0){
    container.textContent="You have not uploaded any products yet.";
    return;
   }
+
   data.forEach(product=>{
    const card=document.createElement("div");
    card.className="product";
+
    if(product.image_url){
     const img=document.createElement("img");
     img.src=product.image_url;
@@ -366,29 +504,42 @@ async function loadProducts(){
     img.loading="lazy";
     card.appendChild(img);
    }
+
    const title=document.createElement("h3");
    title.textContent=product.name||"Unnamed product";
    card.appendChild(title);
 
    const details=document.createElement("p");
-   details.textContent="Category: "+(product.category||"-")+
+   const relatedCategory=Array.isArray(product.categories)
+    ?product.categories[0]
+    :product.categories;
+
+   details.textContent=
+    "Category: "+(relatedCategory?.name||"Unknown")+
     " | Price: Rs. "+(product.price??"-")+
     " | Size: "+(product.size||"-");
+
    card.appendChild(details);
 
    const stockText=document.createElement("p");
-   stockText.textContent="Stock: "+(product.stock===true?"Available":product.stock===false?"Unavailable":"Not specified");
+   stockText.textContent="Stock: "+
+    (product.stock===true?"Available":
+     product.stock===false?"Unavailable":"Not specified");
    card.appendChild(stockText);
 
    const status=document.createElement("p");
    status.textContent="Status: "+(product.status||"Awaiting status");
    card.appendChild(status);
+
    container.appendChild(card);
   });
+
  }catch(e){
-  $("products").textContent="Could not load products: "+friendlyError(e);
+  $("products").textContent=
+   "Could not load products: "+friendlyError(e);
  }
 }
+
 $("refreshBtn").addEventListener("click",loadProducts);
 
 db.auth.onAuthStateChange((event,session)=>{
@@ -396,14 +547,23 @@ db.auth.onAuthStateChange((event,session)=>{
   currentUser=session.user;
   $("auth").classList.add("hidden");
   $("panel").classList.remove("hidden");
-  $("sellerEmail").textContent="Logged in as: "+(session.user.email||"Seller");
-  if(event==="SIGNED_IN") loadProducts();
+  $("sellerEmail").textContent=
+   "Logged in as: "+(session.user.email||"Seller");
+
+  if(event==="SIGNED_IN"){
+   setTimeout(()=>{
+    if(currentUser&&currentUser.id===session.user.id){
+     loadCategories().then(loadProducts);
+    }
+   },0);
+  }
  }else if(event==="SIGNED_OUT"){
   showAuth();
  }
 });
 
 checkSession();
+
 })();
 </script>
 </body>
