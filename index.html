@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,11 +77,13 @@ footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
 <input id="customerName" required maxlength="100" placeholder="Your name" autocomplete="name">
 <input id="customerPhone" required maxlength="20" placeholder="Phone number" inputmode="tel" autocomplete="tel">
 <input id="address" required maxlength="300" placeholder="Full delivery address" autocomplete="street-address">
+
 <select id="area" required>
 <option value="">Select delivery area</option>
-<option value="biratnagar">Inside Biratnagar</option>
+<option value="inside">Inside Biratnagar</option>
 <option value="outside">Outside Biratnagar</option>
 </select>
+
 <textarea id="notes" maxlength="1000" rows="3" placeholder="Order notes (optional)"></textarea>
 <button id="orderButton" type="submit">Place Order</button>
 </form>
@@ -107,16 +110,23 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let products = [];
 let cart = [];
 let submitting = false;
+
 const $ = id => document.getElementById(id);
 
 function money(value) {
   const n = Number(value);
-  return "Rs. " + (Number.isFinite(n) ? n.toLocaleString("en-IN") : "0");
+  return "Rs. " + (
+    Number.isFinite(n) ? n.toLocaleString("en-IN") : "0"
+  );
 }
 
 function firstValue(row, names) {
   for (const name of names) {
-    if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
+    if (
+      row[name] !== undefined &&
+      row[name] !== null &&
+      row[name] !== ""
+    ) {
       return row[name];
     }
   }
@@ -125,22 +135,45 @@ function firstValue(row, names) {
 
 function normalizeProduct(row) {
   const status = String(row.status || "").trim().toLowerCase();
+
   if (!["active", "approved"].includes(status)) return null;
 
-  const available = firstValue(row, ["stock_available", "is_available", "available", "in_stock"]);
-  if (available === false || String(available).toLowerCase() === "false") return null;
+  const available = firstValue(row, [
+    "stock_available", "is_available", "available", "in_stock"
+  ]);
 
-  const stock = firstValue(row, ["stock", "quantity", "stock_quantity"]);
-  if (stock !== null && Number.isFinite(Number(stock)) && Number(stock) <= 0) return null;
+  if (
+    available === false ||
+    String(available).toLowerCase() === "false"
+  ) return null;
+
+  const stock = firstValue(row, [
+    "stock", "quantity", "stock_quantity"
+  ]);
+
+  if (
+    stock !== null &&
+    Number.isFinite(Number(stock)) &&
+    Number(stock) <= 0
+  ) return null;
 
   const id = firstValue(row, ["id", "product_id", "uuid"]);
   const name = firstValue(row, ["name", "product_name", "title"]);
-  const price = firstValue(row, ["selling_price", "sale_price", "price", "final_price", "amount"]);
-  const image = firstValue(row, ["image_url", "image", "photo_url", "product_image", "photo"]);
+  const price = firstValue(row, [
+    "selling_price", "sale_price", "price", "final_price", "amount"
+  ]);
+  const image = firstValue(row, [
+    "image_url", "image", "photo_url", "product_image", "photo"
+  ]);
   const size = firstValue(row, ["size", "product_size"]);
 
-  if (id == null || !name || price == null ||
-      !Number.isFinite(Number(price)) || Number(price) < 0) return null;
+  if (
+    id == null ||
+    !name ||
+    price == null ||
+    !Number.isFinite(Number(price)) ||
+    Number(price) < 0
+  ) return null;
 
   return {
     id: String(id),
@@ -154,15 +187,21 @@ function normalizeProduct(row) {
 function showMessage(message, type = "info") {
   const el = $("orderMessage");
   el.textContent = message;
-  el.style.background = type === "error" ? "#fef2f2" :
-                        type === "success" ? "#ecfdf5" : "#f3f4f6";
-  el.style.color = type === "error" ? "#991b1b" :
-                   type === "success" ? "#065f46" : "#374151";
+
+  el.style.background =
+    type === "error" ? "#fef2f2" :
+    type === "success" ? "#ecfdf5" : "#f3f4f6";
+
+  el.style.color =
+    type === "error" ? "#991b1b" :
+    type === "success" ? "#065f46" : "#374151";
 }
 
 async function fetchApprovedProducts() {
-  const {data, error} = await db.from("products").select("*");
+  const { data, error } = await db.from("products").select("*");
+
   if (error) throw error;
+
   return (data || []).map(normalizeProduct).filter(Boolean);
 }
 
@@ -172,16 +211,22 @@ async function loadProducts() {
 
   try {
     products = await fetchApprovedProducts();
-    cart = cart.filter(item => products.some(p => p.id === item.id));
+
+    cart = cart.filter(item =>
+      products.some(p => p.id === item.id)
+    );
+
     renderProducts();
     renderCart();
 
     $("catalogMessage").textContent = products.length
       ? products.length + " approved product(s) available."
       : "No approved products are available right now.";
-  } catch (e) {
-    console.error("Product loading error:", e);
-    $("catalogMessage").textContent = "Could not load products. Please refresh.";
+
+  } catch (error) {
+    console.error("Product loading error:", error);
+    $("catalogMessage").textContent =
+      "Could not load products. Please refresh.";
   }
 }
 
@@ -201,10 +246,12 @@ function renderProducts() {
       img.src = p.image;
       img.alt = p.name;
       img.loading = "lazy";
+
       img.onerror = () => {
         pic.replaceChildren();
         pic.textContent = "Image unavailable";
       };
+
       pic.appendChild(img);
     } else {
       pic.textContent = "Product image";
@@ -245,8 +292,12 @@ function addToCart(id) {
   if (!p) return;
 
   const existing = cart.find(x => x.id === p.id);
-  if (existing) existing.qty += 1;
-  else cart.push({...p, qty: 1});
+
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({ ...p, qty: 1 });
+  }
 
   renderCart();
 }
@@ -259,6 +310,7 @@ function removeFromCart(id) {
 function renderCart() {
   const box = $("cartItems");
   box.replaceChildren();
+
   let subtotal = 0;
 
   if (!cart.length) {
@@ -292,8 +344,9 @@ function renderCart() {
   });
 
   const area = $("area").value;
+
   const fee = cart.length
-    ? (area === "biratnagar" ? 45 : area === "outside" ? 65 : 0)
+    ? (area === "inside" ? 45 : area === "outside" ? 65 : 0)
     : 0;
 
   $("subtotal").textContent = money(subtotal);
@@ -304,12 +357,10 @@ function renderCart() {
 $("area").addEventListener("change", renderCart);
 
 /*
- * Order submission:
- * - Includes cart items in the JSONB items column.
- * - Uses the known orders column names.
- * - Does not require SELECT permission after inserting.
- * - Displays the actual database error instead of hiding it.
- */
+  Checkout uses the known orders columns.
+  delivery_area must be exactly "inside" or "outside".
+  Payment and status use the enum values already added.
+*/
 async function insertOrder(order) {
   const payload = {
     customer_name: order.name,
@@ -324,7 +375,7 @@ async function insertOrder(order) {
     status: "pending"
   };
 
-  const {error} = await db.from("orders").insert(payload);
+  const { error } = await db.from("orders").insert(payload);
 
   if (error) {
     console.error("MaliMart order submission error:", error);
@@ -334,6 +385,7 @@ async function insertOrder(order) {
 
 $("orderForm").addEventListener("submit", async event => {
   event.preventDefault();
+
   if (submitting) return;
 
   if (!cart.length) {
@@ -352,6 +404,12 @@ $("orderForm").addEventListener("submit", async event => {
     return;
   }
 
+  // Validate the database's exact accepted values.
+  if (!["inside", "outside"].includes(area)) {
+    showMessage("Please select a valid delivery area.", "error");
+    return;
+  }
+
   submitting = true;
   $("orderButton").disabled = true;
   $("orderButton").textContent = "Checking products...";
@@ -366,23 +424,30 @@ $("orderForm").addEventListener("submit", async event => {
 
       if (!fresh) {
         products = freshProducts;
-        cart = cart.filter(p => freshProducts.some(f => f.id === p.id));
+        cart = cart.filter(p =>
+          freshProducts.some(f => f.id === p.id)
+        );
+
         renderProducts();
         renderCart();
+
         showMessage(
-          item.name + " is no longer available or approved. Your cart has been updated.",
+          item.name +
+          " is no longer available or approved. Your cart has been updated.",
           "error"
         );
         return;
       }
 
-      verifiedCart.push({...fresh, qty: item.qty});
+      verifiedCart.push({ ...fresh, qty: item.qty });
     }
 
     const subtotal = verifiedCart.reduce(
-      (sum, item) => sum + item.price * item.qty, 0
+      (sum, item) => sum + item.price * item.qty,
+      0
     );
-    const delivery = area === "biratnagar" ? 45 : 65;
+
+    const delivery = area === "inside" ? 45 : 65;
     const total = subtotal + delivery;
 
     const orderItems = verifiedCart.map(item => ({
@@ -396,8 +461,15 @@ $("orderForm").addEventListener("submit", async event => {
     $("orderButton").textContent = "Submitting order...";
 
     await insertOrder({
-      name, phone, address, area, notes,
-      subtotal, delivery, total, items: orderItems
+      name,
+      phone,
+      address,
+      area,
+      notes,
+      subtotal,
+      delivery,
+      total,
+      items: orderItems
     });
 
     showMessage(
@@ -422,6 +494,7 @@ $("orderForm").addEventListener("submit", async event => {
       "\nYour cart has been kept. Please do not submit repeatedly until this error is fixed.",
       "error"
     );
+
   } finally {
     submitting = false;
     $("orderButton").disabled = false;
