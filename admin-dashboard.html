@@ -25,8 +25,8 @@ h1{font-size:24px;margin-top:0}
 .card strong{display:block;font-size:24px;margin-top:8px;overflow-wrap:anywhere}
 .panel{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:650px}
-th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #e6e8eb;vertical-align:middle;font-size:14px}
-th{background:#f8faf9}
+th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #e6e8eb;vertical-align:top;font-size:14px}
+th{background:#f8faf9;white-space:nowrap}
 .approve{background:#137547;color:white;margin:2px}
 .reject{background:#b42318;color:white;margin:2px}
 .refresh{background:#e2e8f0;color:#202938}
@@ -38,6 +38,11 @@ th{background:#f8faf9}
 .muted{color:#667085}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .toolbar input,.toolbar select{border:1px solid #d0d5dd;background:white;min-width:150px}
+.order-products{min-width:180px}
+.order-products div{padding:7px 0;border-bottom:1px solid #eee}
+.order-products div:last-child{border-bottom:0}
+.order-id{overflow-wrap:anywhere;max-width:180px}
+.address-cell{min-width:180px;max-width:280px;overflow-wrap:anywhere}
 @media(max-width:650px){
 .layout{display:block}
 nav{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-right:0;border-bottom:1px solid #ddd}
@@ -93,7 +98,11 @@ h1{font-size:21px}
 
   function escapeHTML(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
     })[char]);
   }
 
@@ -108,18 +117,28 @@ h1{font-size:21px}
 
   function money(value) {
     const number = Number(value);
-    return 'Rs. ' + (Number.isFinite(number) ? number.toLocaleString('en-IN') : '0');
+    return 'Rs. ' + (
+      Number.isFinite(number)
+        ? number.toLocaleString('en-IN')
+        : '0'
+    );
   }
 
   function dateText(value) {
     if (!value) return '—';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+    return Number.isNaN(date.getTime())
+      ? String(value)
+      : date.toLocaleString();
   }
 
   function cell(value) {
-    if (value === null || value === undefined || value === '') value = '—';
-    if (typeof value === 'object') value = JSON.stringify(value);
+    if (value === null || value === undefined || value === '') {
+      value = '—';
+    }
+    if (typeof value === 'object') {
+      value = JSON.stringify(value);
+    }
     return `<td>${escapeHTML(value)}</td>`;
   }
 
@@ -202,8 +221,14 @@ h1{font-size:21px}
     const orders = rows.orders;
     const sellers = rows.profile;
     const replacements = rows.replacement;
-    const pending = products.filter(p => normalizedStatus(p.status) === 'pending').length;
-    const approved = products.filter(p => isApprovedStatus(p.status)).length;
+
+    const pending = products.filter(
+      p => normalizedStatus(p.status) === 'pending'
+    ).length;
+
+    const approved = products.filter(
+      p => isApprovedStatus(p.status)
+    ).length;
 
     $('summary').innerHTML = [
       ['Products', products.length],
@@ -224,24 +249,28 @@ h1{font-size:21px}
     `;
 
     if (errors.length) {
-      showMessage('Some dashboard sections could not load: ' + errors.join(' | '));
+      showMessage(
+        'Some dashboard sections could not load: ' + errors.join(' | ')
+      );
     }
   }
 
   function productTable(products) {
-    if (!products.length) return '<p>No products match this filter.</p>';
+    if (!products.length) {
+      return '<p>No products match this filter.</p>';
+    }
 
     return `<table>
       <thead><tr>
         <th>Photo</th><th>Product</th><th>Category</th>
-        <th>Price</th><th>Size</th><th>Stock</th><th>Status</th><th>Actions</th>
+        <th>Price</th><th>Size</th><th>Stock</th>
+        <th>Status</th><th>Actions</th>
       </tr></thead>
       <tbody>
       ${products.map(p => {
         const id = p.id;
         const status = String(p.status ?? 'Unknown');
         const lowerStatus = normalizedStatus(status);
-        const pending = lowerStatus === 'pending';
         const busy = busyProductIds.has(String(id));
         const price = p.price ?? p.base_price ?? 0;
         const stock = p.stock_available ?? p.stock ?? '—';
@@ -249,7 +278,9 @@ h1{font-size:21px}
         const image = p.image_url ?? p.image ?? '';
 
         const photo = image
-          ? `<img class="photo" src="${escapeHTML(image)}" alt="Product photo" loading="lazy" onerror="this.style.display='none'">`
+          ? `<img class="photo" src="${escapeHTML(image)}"
+              alt="Product photo" loading="lazy"
+              onerror="this.style.display='none'">`
           : 'No photo';
 
         return `<tr>
@@ -262,10 +293,12 @@ h1{font-size:21px}
           ${cell(stock)}
           <td class="status">${escapeHTML(status)}</td>
           <td>
-            <button class="approve" data-action="approve" data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>
+            <button class="approve" data-action="approve"
+              data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>
               ${busy ? 'Saving…' : (isApprovedStatus(status) ? 'Set Active' : 'Approve')}
             </button>
-            <button class="reject" data-action="reject" data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>Reject</button>
+            <button class="reject" data-action="reject"
+              data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>Reject</button>
           </td>
         </tr>`;
       }).join('')}
@@ -280,9 +313,17 @@ h1{font-size:21px}
     try {
       const products = await getRows('products');
 
-      const pending = products.filter(p => normalizedStatus(p.status) === 'pending').length;
-      const approved = products.filter(p => isApprovedStatus(p.status)).length;
-      const rejected = products.filter(p => normalizedStatus(p.status) === 'rejected').length;
+      const pending = products.filter(
+        p => normalizedStatus(p.status) === 'pending'
+      ).length;
+
+      const approved = products.filter(
+        p => isApprovedStatus(p.status)
+      ).length;
+
+      const rejected = products.filter(
+        p => normalizedStatus(p.status) === 'rejected'
+      ).length;
 
       $('summary').innerHTML = [
         ['All products', products.length],
@@ -295,7 +336,9 @@ h1{font-size:21px}
 
       $('content').innerHTML = `
         <div class="toolbar">
-          <input id="productSearch" type="search" placeholder="Search product name or ID" value="${escapeHTML(productSearch)}">
+          <input id="productSearch" type="search"
+            placeholder="Search product name or ID"
+            value="${escapeHTML(productSearch)}">
           <select id="productFilter">
             <option value="all" ${productFilter === 'all' ? 'selected' : ''}>All statuses</option>
             <option value="pending" ${productFilter === 'pending' ? 'selected' : ''}>Pending</option>
@@ -332,7 +375,9 @@ h1{font-size:21px}
       const name = String(p.name ?? p.title ?? '').toLowerCase();
       const id = String(p.id ?? '').toLowerCase();
 
-      const matchesSearch = !query || name.includes(query) || id.includes(query);
+      const matchesSearch =
+        !query || name.includes(query) || id.includes(query);
+
       let matchesStatus = true;
 
       if (productFilter === 'pending') matchesStatus = status === 'pending';
@@ -349,7 +394,7 @@ h1{font-size:21px}
   function isEnumValueError(error) {
     const message = String(error?.message ?? error ?? '').toLowerCase();
     return message.includes('invalid input value for enum') ||
-           (message.includes('enum') && message.includes('invalid input'));
+      (message.includes('enum') && message.includes('invalid input'));
   }
 
   async function tryStatusUpdate(id, candidate) {
@@ -363,7 +408,7 @@ h1{font-size:21px}
 
     if (!data || data.length === 0) {
       const noRow = new Error(
-        'Supabase returned no updated row. Check that the logged-in admin has UPDATE permission for this product and that the product ID exists.'
+        'Supabase returned no updated row. Check admin UPDATE permission and the product ID.'
       );
       noRow.code = 'NO_ROW_UPDATED';
       throw noRow;
@@ -390,11 +435,6 @@ h1{font-size:21px}
     clearMessage();
 
     try {
-      /*
-       * The database has rejected "Approved" for this column.
-       * Try "Active" first, then other common labels only when
-       * the database explicitly reports an invalid enum value.
-       */
       const candidates = approve
         ? ['Active', 'Approved', 'active', 'approved']
         : ['Rejected', 'rejected'];
@@ -417,7 +457,7 @@ h1{font-size:21px}
 
       if (!savedRow) {
         throw new Error(
-          'Supabase rejected all attempted status values. Last database error: ' +
+          'Supabase rejected the attempted status values. ' +
           (lastEnumError?.message || 'No accepted status was found.')
         );
       }
@@ -433,20 +473,76 @@ h1{font-size:21px}
       let message = error?.message || String(error);
 
       if (error?.code === 'NO_ROW_UPDATED') {
-        message += ' This is usually an admin UPDATE policy or row-access problem, not an enum problem.';
-      } else if (String(message).toLowerCase().includes('permission') ||
-                 String(message).toLowerCase().includes('row-level security') ||
-                 String(message).toLowerCase().includes('rls')) {
-        message += ' Supabase is blocking this update. The admin needs a valid UPDATE policy.';
+        message += ' This may be an admin UPDATE policy or row-access problem.';
+      } else if (
+        /permission|row-level security|\brls\b/i.test(message)
+      ) {
+        message += ' Supabase is blocking this update. Check the admin UPDATE policy.';
       }
 
       showMessage('Product status was NOT confirmed as saved: ' + message);
     } finally {
       busyProductIds.delete(key);
-      if (currentPage === 'products') {
-        await loadProducts();
+      if (currentPage === 'products') await loadProducts();
+    }
+  }
+
+  // Format products stored in the orders.items JSON field.
+  function orderItemsHTML(value) {
+    let items = value;
+
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (_) {
+        items = [];
       }
     }
+
+    if (items && !Array.isArray(items) && Array.isArray(items.items)) {
+      items = items.items;
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return '<span class="muted">No product details saved</span>';
+    }
+
+    return `<div class="order-products">${items.map(item => {
+      if (!item || typeof item !== 'object') {
+        return `<div>${escapeHTML(item ?? 'Product')}</div>`;
+      }
+
+      const product = item.product && typeof item.product === 'object'
+        ? item.product
+        : item;
+
+      const name =
+        product.name ||
+        product.product_name ||
+        product.title ||
+        item.name ||
+        item.product_name ||
+        item.title ||
+        'Product';
+
+      const quantity = Number(item.quantity ?? item.qty ?? 1);
+      const price = Number(
+        item.price ?? item.unit_price ?? product.price ?? 0
+      );
+
+      const size = item.size || product.size || '';
+      const lineTotal = item.subtotal ?? item.line_total;
+
+      return `<div>
+        <strong>${escapeHTML(name)}</strong><br>
+        <small>Quantity: ${Number.isFinite(quantity) ? quantity : 1}</small>
+        ${size ? `<br><small>Size: ${escapeHTML(size)}</small>` : ''}
+        <br><small>${escapeHTML(money(price))} each</small>
+        ${lineTotal !== undefined
+          ? `<br><small>Item total: ${escapeHTML(money(lineTotal))}</small>`
+          : ''}
+      </div>`;
+    }).join('')}</div>`;
   }
 
   async function loadOrders() {
@@ -457,114 +553,79 @@ h1{font-size:21px}
     try {
       const orders = await getRows('orders');
 
-      $('summary').innerHTML =
-        `<div class="card">Total orders<strong>${orders.length}</strong></div>`;
+      const pendingOrders = orders.filter(
+        o => normalizedStatus(o.status) === 'pending'
+      ).length;
+
+      const pendingPayments = orders.filter(
+        o => normalizedStatus(o.payment_status) === 'pending'
+      ).length;
+
+      $('summary').innerHTML = [
+        ['Total orders', orders.length],
+        ['Pending orders', pendingOrders],
+        ['Pending payments', pendingPayments]
+      ].map(([label, value]) =>
+        `<div class="card">${escapeHTML(label)}<strong>${value}</strong></div>`
+      ).join('');
 
       if (!orders.length) {
         $('content').innerHTML = '<p>No orders found yet.</p>';
         return;
       }
 
-      $('content').innerHTML = `<table><thead><tr>
-        <th>Order ID</th><th>Customer ID</th><th>Delivery area</th>
-        <th>Delivery fee</th><th>Total</th><th>Payment</th>
-        <th>Payment status</th><th>Order status</th><th>Created</th><th>Delivered</th>
-      </tr></thead><tbody>${orders.map(o => `<tr>
-        ${cell(o.id)}${cell(o.customer_id)}${cell(o.delivery_area)}
-        ${cell(money(o.delivery_fee))}${cell(money(o.total))}
-        ${cell(o.payment_method)}${cell(o.payment_status)}
-        ${cell(o.status)}${cell(dateText(o.created_at))}${cell(dateText(o.delivered_at))}
-      </tr>`).join('')}</tbody></table>`;
-    } catch (error) {
-      $('content').innerHTML = '<p>Orders could not be loaded.</p>';
-      showMessage(error.message);
-    }
-  }
+      orders.sort((a, b) =>
+        new Date(b.created_at || 0) - new Date(a.created_at || 0)
+      );
 
-  async function loadGenericTable(table, title) {
-    $('summary').innerHTML = '';
-    $('sectionTitle').textContent = title;
-    $('content').innerHTML = 'Loading records...';
+      $('content').innerHTML = `
+        <p class="muted">
+          Customer details, purchased products, delivery information and payment details.
+        </p>
 
-    try {
-      const rows = await getRows(table);
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer name and phone</th>
+              <th>Delivery address</th>
+              <th>Products ordered</th>
+              <th>Delivery area</th>
+              <th>Delivery fee</th>
+              <th>Order total</th>
+              <th>Payment method</th>
+              <th>Payment status</th>
+              <th>Order status</th>
+              <th>Order date</th>
+              <th>Delivered date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map(o => {
+              const rawId = String(o.id ?? '—');
+              const displayId = /^\d+$/.test(rawId)
+                ? 'MM-' + rawId.padStart(5, '0')
+                : rawId;
 
-      if (!rows.length) {
-        $('summary').innerHTML =
-          `<div class="card">${escapeHTML(title)}<strong>0</strong></div>`;
-        $('content').innerHTML = '<p>No records found.</p>';
-        return;
-      }
+              const area = o.delivery_area === 'inside'
+                ? 'Inside Biratnagar'
+                : o.delivery_area === 'outside'
+                  ? 'Outside Biratnagar'
+                  : o.delivery_area || '—';
 
-      const keys = [...new Set(rows.flatMap(row => Object.keys(row)))];
+              const customerName =
+                o.customer_name || o.full_name || o.name || '';
 
-      $('content').innerHTML = `<table><thead><tr>
-        ${keys.map(k => `<th>${escapeHTML(k.replaceAll('_', ' '))}</th>`).join('')}
-      </tr></thead><tbody>${rows.map(row => `<tr>${keys.map(key => cell(row[key])).join('')}</tr>`).join('')}</tbody></table>`;
+              const phone =
+                o.customer_phone || o.phone || o.phone_number || '';
 
-      $('summary').innerHTML =
-        `<div class="card">${escapeHTML(title)}<strong>${rows.length}</strong></div>`;
-    } catch (error) {
-      $('content').innerHTML = `<p>${escapeHTML(title)} could not be loaded.</p>`;
-      showMessage(error.message);
-    }
-  }
+              const address =
+                o.delivery_address || o.address || '';
 
-  async function renderPage() {
-    setActivePage(currentPage);
+              const paymentMethod = String(
+                o.payment_method || '—'
+              ).replaceAll('_', ' ');
 
-    const loggedIn = await checkLogin();
-    if (!loggedIn) return;
-
-    if (currentPage === 'dashboard') return loadDashboard();
-    if (currentPage === 'products') return loadProducts();
-    if (currentPage === 'orders') return loadOrders();
-    if (currentPage === 'sellers') return loadGenericTable('profile', 'Seller records');
-    if (currentPage === 'replacements') return loadGenericTable('replacement', 'Replacement requests');
-    if (currentPage === 'categories') return loadGenericTable('categories', 'Product categories');
-  }
-
-  document.querySelectorAll('nav button').forEach(button => {
-    button.addEventListener('click', () => {
-      currentPage = button.dataset.page;
-      renderPage();
-    });
-  });
-
-  $('refreshBtn').addEventListener('click', renderPage);
-
-  $('content').addEventListener('click', event => {
-    const actionButton = event.target.closest('[data-action]');
-    const gotoButton = event.target.closest('[data-goto]');
-
-    if (gotoButton) {
-      currentPage = gotoButton.dataset.goto;
-      renderPage();
-      return;
-    }
-
-    if (actionButton) {
-      changeProductStatus(actionButton.dataset.id, actionButton.dataset.action);
-    }
-  });
-
-  $('logoutBtn').addEventListener('click', async () => {
-    $('logoutBtn').disabled = true;
-
-    try {
-      const { error } = await db.auth.signOut();
-      if (error) throw error;
-      location.replace('admin.html');
-    } catch (error) {
-      showMessage('Logout failed: ' + error.message);
-      $('logoutBtn').disabled = false;
-    }
-  });
-
-  checkLogin().then(ok => {
-    if (ok) renderPage();
-  });
-})();
-</script>
-</body>
-</html>
+              return `<tr>
+                <td class="order-id">
+                  <strong>$
