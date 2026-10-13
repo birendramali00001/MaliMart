@@ -3,629 +3,617 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MaliMart Admin Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f4f6f9;color:#202938}
-header{background:#123c2d;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-header h2{margin:0;font-size:22px}
-button,select,input{cursor:pointer;border:0;border-radius:7px;padding:10px 12px;font-size:14px}
-button:disabled{opacity:.55;cursor:wait}
-.logout{background:white;color:#123c2d}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f9;color:#222}
+header{background:#172554;color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header h2{margin:0;font-size:21px}
+button,select,input{font:inherit}
+button{border:0;border-radius:6px;padding:10px 13px;cursor:pointer;background:#1d4ed8;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+.logout{background:#dc2626}
 .layout{display:flex;min-height:calc(100vh - 60px)}
-nav{width:190px;flex-shrink:0;background:white;padding:12px;border-right:1px solid #ddd}
-nav button{width:100%;text-align:left;margin:4px 0;background:white;color:#263b32}
-nav button.active,nav button:hover{background:#dcefe5;font-weight:bold}
-main{padding:20px;min-width:0;flex:1}
-h1{font-size:24px;margin-top:0}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin-bottom:20px}
-.card,.panel{background:white;border-radius:10px;padding:16px;box-shadow:0 1px 5px #0000000d}
-.card strong{display:block;font-size:24px;margin-top:8px;overflow-wrap:anywhere}
-.panel{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:650px}
-th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #e6e8eb;vertical-align:top;font-size:14px}
-th{background:#f8faf9;white-space:nowrap}
-.approve{background:#137547;color:white;margin:2px}
-.reject{background:#b42318;color:white;margin:2px}
-.refresh{background:#e2e8f0;color:#202938}
-.photo{width:55px;height:55px;object-fit:cover;border-radius:6px;background:#eee}
-.status{font-weight:bold}
-.notice{padding:12px;margin:10px 0;border-radius:7px;overflow-wrap:anywhere}
-.error{background:#fee4e2;color:#912018}
-.success{background:#dcfae6;color:#05603a}
-.muted{color:#667085}
+nav{width:190px;background:#fff;padding:12px;flex-shrink:0;border-right:1px solid #ddd}
+nav button{display:block;width:100%;margin:5px 0;text-align:left;background:#fff;color:#222}
+nav button.active,nav button:hover{background:#dbeafe;color:#1d4ed8}
+main{padding:18px;min-width:0;flex:1}
+h2,h3{margin-top:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.card{background:white;padding:18px;border-radius:10px;box-shadow:0 1px 4px #0001}
+.card small{color:#666}
+.card strong{display:block;font-size:26px;margin-top:8px}
+.panel{background:white;border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px #0001}
+.message{padding:12px;border-radius:6px;margin-bottom:14px;display:none;overflow-wrap:anywhere}
+.error{background:#fee2e2;color:#991b1b}
+.success{background:#dcfce7;color:#166534}
+.info{background:#dbeafe;color:#1e40af}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+th,td{padding:11px 9px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}
+th{background:#f8fafc;white-space:nowrap}
+td{overflow-wrap:anywhere}
+td button{margin:2px;padding:7px 9px;font-size:12px}
+input,select{padding:9px;border:1px solid #cbd5e1;border-radius:6px;max-width:100%}
+.muted{color:#64748b;font-size:12px}
+.status{display:inline-block;padding:4px 7px;border-radius:5px;background:#e5e7eb;font-size:12px}
+.order-detail{min-width:180px;line-height:1.6}
+.product-img{width:55px;height:55px;object-fit:cover;border-radius:6px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.toolbar input,.toolbar select{border:1px solid #d0d5dd;background:white;min-width:150px}
-.order-products{min-width:180px}
-.order-products div{padding:7px 0;border-bottom:1px solid #eee}
-.order-products div:last-child{border-bottom:0}
-.order-id{overflow-wrap:anywhere;max-width:180px}
-.address-cell{min-width:180px;max-width:280px;overflow-wrap:anywhere}
+.hidden{display:none!important}
+#loading{padding:30px;text-align:center}
 @media(max-width:650px){
-.layout{display:block}
-nav{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-right:0;border-bottom:1px solid #ddd}
-main{padding:13px}
-h1{font-size:21px}
+ .layout{display:block}
+ nav{width:100%;display:flex;overflow-x:auto;border-right:0;border-bottom:1px solid #ddd}
+ nav button{min-width:max-content;width:auto;margin:3px}
+ main{padding:12px}
+ header h2{font-size:18px}
 }
 </style>
 </head>
+
 <body>
 <header>
-  <h2>MaliMart Admin</h2>
-  <button class="logout" id="logoutBtn">Log out</button>
+  <h2>🛍️ MaliMart Admin</h2>
+  <div>
+    <span id="adminEmail" style="font-size:12px;margin-right:8px"></span>
+    <button class="logout" id="logoutBtn" onclick="logout()">Logout</button>
+  </div>
 </header>
 
-<div class="layout">
-<nav>
-  <button class="active" data-page="dashboard">🏠 Dashboard</button>
-  <button data-page="products">📦 Products</button>
-  <button data-page="orders">🧾 Orders</button>
-  <button data-page="sellers">👥 Sellers</button>
-  <button data-page="replacements">🔄 Replacements</button>
-  <button data-page="categories">🏷️ Categories</button>
-</nav>
+<div id="loading">Checking your login...</div>
 
-<main>
-  <h1 id="pageTitle">Dashboard</h1>
-  <div id="message" aria-live="polite"></div>
-  <div id="summary" class="cards"></div>
-  <div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-      <strong id="sectionTitle">Overview</strong>
-      <button class="refresh" id="refreshBtn">Refresh</button>
-    </div>
-    <div id="content">Checking your login...</div>
-  </div>
-</main>
+<div id="app" class="layout hidden">
+  <nav>
+    <button class="active" data-page="dashboard" onclick="openPage('dashboard',this)">Dashboard</button>
+    <button data-page="products" onclick="openPage('products',this)">Products</button>
+    <button data-page="orders" onclick="openPage('orders',this)">Orders</button>
+    <button data-page="sellers" onclick="openPage('sellers',this)">Sellers</button>
+    <button data-page="replacements" onclick="openPage('replacements',this)">Replacements</button>
+    <button data-page="categories" onclick="openPage('categories',this)">Categories</button>
+  </nav>
+
+  <main>
+    <div id="message" class="message"></div>
+    <div id="pageContent"></div>
+  </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-(() => {
-  'use strict';
+'use strict';
 
-  const SUPABASE_URL = 'https://adlovngoubhcdlinhcoz.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp';
+const SUPABASE_URL = 'https://adlovngoubhcdlinhcoz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp';
 
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const $ = id => document.getElementById(id);
+let db;
+let currentPage = 'dashboard';
+let cachedProducts = [];
+let cachedOrders = [];
 
-  let currentPage = 'dashboard';
-  let busyProductIds = new Set();
-  let productSearch = '';
-  let productFilter = 'all';
+function showMessage(message, type='error') {
+  const el = document.getElementById('message');
+  el.className = 'message ' + type;
+  el.textContent = message;
+  el.style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
-  function escapeHTML(value) {
-    return String(value ?? '').replace(/[&<>"']/g, char => ({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    })[char]);
+function clearMessage() {
+  const el = document.getElementById('message');
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[ch]);
+}
+
+function money(value) {
+  const n = Number(value);
+  return 'Rs. ' + (Number.isFinite(n) ? n.toLocaleString('en-IN') : '0');
+}
+
+function displayDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? escapeHTML(value) : d.toLocaleString();
+}
+
+function showLoading(text='Loading...') {
+  document.getElementById('pageContent').innerHTML =
+    '<div id="loading">' + escapeHTML(text) + '</div>';
+}
+
+async function withTimeout(promise, ms=12000) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(
+          'The request timed out. Check your internet connection and reload the page.'
+        )), ms);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
+}
 
-  function showMessage(message, type = 'error') {
-    $('message').innerHTML =
-      `<div class="notice ${type}">${escapeHTML(message)}</div>`;
-  }
+/* Start up: check the session only once. */
+async function startApp() {
+  const loading = document.getElementById('loading');
 
-  function clearMessage() {
-    $('message').innerHTML = '';
-  }
-
-  function money(value) {
-    const number = Number(value);
-    return 'Rs. ' + (
-      Number.isFinite(number)
-        ? number.toLocaleString('en-IN')
-        : '0'
-    );
-  }
-
-  function dateText(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? String(value)
-      : date.toLocaleString();
-  }
-
-  function cell(value) {
-    if (value === null || value === undefined || value === '') {
-      value = '—';
+  try {
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error('Supabase could not load. Check your internet connection and reload.');
     }
-    if (typeof value === 'object') {
-      value = JSON.stringify(value);
-    }
-    return `<td>${escapeHTML(value)}</td>`;
-  }
 
-  function normalizedStatus(value) {
-    return String(value ?? '').trim().toLowerCase();
-  }
-
-  function isApprovedStatus(value) {
-    return ['active', 'approved'].includes(normalizedStatus(value));
-  }
-
-  async function checkLogin() {
-    try {
-      const { data, error } = await db.auth.getSession();
-      if (error) throw error;
-
-      if (!data.session) {
-        location.replace('admin.html');
-        return false;
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
-      return true;
-    } catch (error) {
-      showMessage('Could not verify your login: ' + error.message);
-      return false;
-    }
-  }
-
-  async function getRows(table) {
-    const { data, error } = await db.from(table).select('*');
-    if (error) throw new Error(table + ': ' + error.message);
-    return data || [];
-  }
-
-  function setActivePage(page) {
-    currentPage = page;
-
-    document.querySelectorAll('nav button').forEach(button => {
-      button.classList.toggle('active', button.dataset.page === page);
     });
 
-    const titles = {
-      dashboard: 'Dashboard',
-      products: 'Product Management',
-      orders: 'Order Management',
-      sellers: 'Seller Records',
-      replacements: 'Replacement Requests',
-      categories: 'Categories'
-    };
+    const result = await withTimeout(db.auth.getSession());
 
-    $('pageTitle').textContent = titles[page] || 'MaliMart Admin';
-    clearMessage();
+    if (result.error) throw result.error;
+
+    const session = result.data?.session;
+
+    if (!session) {
+      loading.textContent = 'No active login found. Opening the admin login page...';
+      window.location.replace('admin.html');
+      return;
+    }
+
+    document.getElementById('adminEmail').textContent =
+      session.user?.email || 'Admin';
+
+    loading.classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    await openPage('dashboard');
+
+  } catch (err) {
+    loading.classList.remove('hidden');
+    loading.innerHTML =
+      '<p>Could not open the admin dashboard.</p>' +
+      '<p>' + escapeHTML(err.message || String(err)) + '</p>' +
+      '<button onclick="location.reload()">Try Again</button>' +
+      '<button onclick="location.href=\'admin.html\'">Open Login</button>';
+  }
+}
+
+async function logout() {
+  if (!db) {
+    window.location.replace('admin.html');
+    return;
   }
 
-  async function loadDashboard() {
-    $('summary').innerHTML = '';
-    $('sectionTitle').textContent = 'Store overview';
-    $('content').innerHTML = 'Loading dashboard...';
+  const btn = document.getElementById('logoutBtn');
+  btn.disabled = true;
 
-    const results = await Promise.allSettled([
-      getRows('products'),
-      getRows('orders'),
-      getRows('profile'),
-      getRows('replacement')
+  try {
+    const {error} = await withTimeout(db.auth.signOut());
+    if (error) throw error;
+    window.location.replace('admin.html');
+  } catch (err) {
+    btn.disabled = false;
+    showMessage('Logout failed: ' + err.message);
+  }
+}
+
+async function openPage(page, button) {
+  currentPage = page;
+  clearMessage();
+
+  document.querySelectorAll('nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+
+  if (button) {
+    button.classList.add('active');
+  }
+
+  if (page === 'dashboard') return loadDashboard();
+  if (page === 'products') return loadProducts();
+  if (page === 'orders') return loadOrders();
+  if (page === 'sellers') return loadSellers();
+  if (page === 'replacements') return loadReplacements();
+  if (page === 'categories') return loadCategories();
+}
+
+/* Dashboard */
+async function loadDashboard() {
+  showLoading('Loading dashboard...');
+
+  try {
+    const results = await Promise.all([
+      db.from('products').select('*', {count:'exact',head:true}),
+      db.from('orders').select('*', {count:'exact',head:true}),
+      db.from('profiles').select('*', {count:'exact',head:true})
     ]);
 
-    const labels = ['products', 'orders', 'profile', 'replacement'];
-    const rows = {};
-    const errors = [];
+    const productCount = results[0].count;
+    const orderCount = results[1].count;
+    const sellerCount = results[2].count;
 
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        rows[labels[index]] = result.value;
-      } else {
-        rows[labels[index]] = [];
-        errors.push(result.reason?.message || String(result.reason));
-      }
-    });
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Dashboard</h2>
+      <div class="cards">
+        <div class="card"><small>Total Products</small><strong>${productCount ?? '—'}</strong></div>
+        <div class="card"><small>Total Orders</small><strong>${orderCount ?? '—'}</strong></div>
+        <div class="card"><small>Profiles</small><strong>${sellerCount ?? '—'}</strong></div>
+      </div>
+      <div class="panel">
+        <h3>Welcome to MaliMart</h3>
+        <p>Use the menu to manage products, customer orders, sellers, replacements and categories.</p>
+        <button onclick="openPage('orders')">View Orders</button>
+        <button onclick="openPage('products')">Manage Products</button>
+      </div>`;
 
-    const products = rows.products;
-    const orders = rows.orders;
-    const sellers = rows.profile;
-    const replacements = rows.replacement;
-
-    const pending = products.filter(
-      p => normalizedStatus(p.status) === 'pending'
-    ).length;
-
-    const approved = products.filter(
-      p => isApprovedStatus(p.status)
-    ).length;
-
-    $('summary').innerHTML = [
-      ['Products', products.length],
-      ['Pending approval', pending],
-      ['Approved / Active', approved],
-      ['Orders', orders.length],
-      ['Seller records', sellers.length],
-      ['Replacement records', replacements.length]
-    ].map(([label, value]) =>
-      `<div class="card">${escapeHTML(label)}<strong>${value}</strong></div>`
-    ).join('');
-
-    $('content').innerHTML = `
-      <p>Welcome to your MaliMart admin panel.</p>
-      <p>Review pending products before they are made available to customers.</p>
-      <button class="approve" data-goto="products">Review Products</button>
-      <button class="refresh" data-goto="orders">View Orders</button>
-    `;
-
-    if (errors.length) {
-      showMessage(
-        'Some dashboard sections could not load: ' + errors.join(' | ')
-      );
-    }
+    const errors = results.filter(r => r.error).map(r => r.error.message);
+    if (errors.length) showMessage('Some dashboard counts could not load: ' + errors.join(' | '));
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Dashboard</h2>';
+    showMessage(err.message || String(err));
   }
+}
 
-  function productTable(products) {
-    if (!products.length) {
-      return '<p>No products match this filter.</p>';
-    }
+/* Products */
+async function loadProducts() {
+  showLoading('Loading products...');
 
-    return `<table>
-      <thead><tr>
-        <th>Photo</th><th>Product</th><th>Category</th>
-        <th>Price</th><th>Size</th><th>Stock</th>
-        <th>Status</th><th>Actions</th>
-      </tr></thead>
-      <tbody>
-      ${products.map(p => {
-        const id = p.id;
-        const status = String(p.status ?? 'Unknown');
-        const lowerStatus = normalizedStatus(status);
-        const busy = busyProductIds.has(String(id));
-        const price = p.price ?? p.base_price ?? 0;
-        const stock = p.stock_available ?? p.stock ?? '—';
-        const category = p.category ?? p.category_name ?? p.category_id ?? '—';
-        const image = p.image_url ?? p.image ?? '';
-
-        const photo = image
-          ? `<img class="photo" src="${escapeHTML(image)}"
-              alt="Product photo" loading="lazy"
-              onerror="this.style.display='none'">`
-          : 'No photo';
-
-        return `<tr>
-          <td>${photo}</td>
-          <td><strong>${escapeHTML(p.name ?? p.title ?? 'Unnamed product')}</strong><br>
-            <small>${escapeHTML(id)}</small></td>
-          ${cell(category)}
-          ${cell(money(price))}
-          ${cell(p.size)}
-          ${cell(stock)}
-          <td class="status">${escapeHTML(status)}</td>
-          <td>
-            <button class="approve" data-action="approve"
-              data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>
-              ${busy ? 'Saving…' : (isApprovedStatus(status) ? 'Set Active' : 'Approve')}
-            </button>
-            <button class="reject" data-action="reject"
-              data-id="${escapeHTML(id)}" ${busy ? 'disabled' : ''}>Reject</button>
-          </td>
-        </tr>`;
-      }).join('')}
-      </tbody></table>`;
-  }
-
-  async function loadProducts() {
-    $('summary').innerHTML = '';
-    $('sectionTitle').textContent = 'Review and manage products';
-    $('content').innerHTML = 'Loading products...';
-
-    try {
-      const products = await getRows('products');
-
-      const pending = products.filter(
-        p => normalizedStatus(p.status) === 'pending'
-      ).length;
-
-      const approved = products.filter(
-        p => isApprovedStatus(p.status)
-      ).length;
-
-      const rejected = products.filter(
-        p => normalizedStatus(p.status) === 'rejected'
-      ).length;
-
-      $('summary').innerHTML = [
-        ['All products', products.length],
-        ['Pending', pending],
-        ['Approved / Active', approved],
-        ['Rejected', rejected]
-      ].map(([label, value]) =>
-        `<div class="card">${escapeHTML(label)}<strong>${value}</strong></div>`
-      ).join('');
-
-      $('content').innerHTML = `
-        <div class="toolbar">
-          <input id="productSearch" type="search"
-            placeholder="Search product name or ID"
-            value="${escapeHTML(productSearch)}">
-          <select id="productFilter">
-            <option value="all" ${productFilter === 'all' ? 'selected' : ''}>All statuses</option>
-            <option value="pending" ${productFilter === 'pending' ? 'selected' : ''}>Pending</option>
-            <option value="approved" ${productFilter === 'approved' ? 'selected' : ''}>Approved / Active</option>
-            <option value="rejected" ${productFilter === 'rejected' ? 'selected' : ''}>Rejected</option>
-          </select>
-        </div>
-        <div id="productTableWrap"></div>
-      `;
-
-      renderFilteredProducts(products);
-
-      $('productSearch').addEventListener('input', event => {
-        productSearch = event.target.value;
-        renderFilteredProducts(products);
-      });
-
-      $('productFilter').addEventListener('change', event => {
-        productFilter = event.target.value;
-        renderFilteredProducts(products);
-      });
-
-    } catch (error) {
-      $('content').innerHTML = '<p>Products could not be loaded.</p>';
-      showMessage(error.message);
-    }
-  }
-
-  function renderFilteredProducts(products) {
-    const query = productSearch.trim().toLowerCase();
-
-    const filtered = products.filter(p => {
-      const status = normalizedStatus(p.status);
-      const name = String(p.name ?? p.title ?? '').toLowerCase();
-      const id = String(p.id ?? '').toLowerCase();
-
-      const matchesSearch =
-        !query || name.includes(query) || id.includes(query);
-
-      let matchesStatus = true;
-
-      if (productFilter === 'pending') matchesStatus = status === 'pending';
-      if (productFilter === 'approved') matchesStatus = isApprovedStatus(status);
-      if (productFilter === 'rejected') matchesStatus = status === 'rejected';
-
-      return matchesSearch && matchesStatus;
-    });
-
-    const wrap = $('productTableWrap');
-    if (wrap) wrap.innerHTML = productTable(filtered);
-  }
-
-  function isEnumValueError(error) {
-    const message = String(error?.message ?? error ?? '').toLowerCase();
-    return message.includes('invalid input value for enum') ||
-      (message.includes('enum') && message.includes('invalid input'));
-  }
-
-  async function tryStatusUpdate(id, candidate) {
-    const { data, error } = await db
-      .from('products')
-      .update({ status: candidate })
-      .eq('id', id)
-      .select('id,status');
+  try {
+    const {data, error} = await withTimeout(
+      db.from('products').select('*').order('created_at', {ascending:false})
+    );
 
     if (error) throw error;
 
-    if (!data || data.length === 0) {
-      const noRow = new Error(
-        'Supabase returned no updated row. Check admin UPDATE permission and the product ID.'
-      );
-      noRow.code = 'NO_ROW_UPDATED';
-      throw noRow;
+    cachedProducts = data || [];
+
+    if (!cachedProducts.length) {
+      document.getElementById('pageContent').innerHTML =
+        '<h2>Products</h2><div class="panel">No products found.</div>';
+      return;
     }
 
-    return data[0];
+    const rows = cachedProducts.map(p => {
+      const id = p.id;
+      const title = p.name || p.title || p.product_name || 'Unnamed product';
+      const photo = p.image_url || p.image || p.photo_url || '';
+      const status = p.status || '—';
+      const price = p.price ?? p.selling_price ?? 0;
+
+      return `<tr>
+        <td>${photo ? `<img class="product-img" src="${escapeHTML(photo)}" alt="Product" onerror="this.style.display='none'">` : '—'}</td>
+        <td><strong>${escapeHTML(title)}</strong><br><small class="muted">ID: ${escapeHTML(id)}</small></td>
+        <td>${money(price)}</td>
+        <td>${escapeHTML(p.category_id || p.category || '—')}</td>
+        <td><span class="status">${escapeHTML(status)}</span></td>
+        <td>
+          <button onclick="changeProductStatus('${escapeHTML(id)}','approve')">Approve</button>
+          <button style="background:#dc2626" onclick="changeProductStatus('${escapeHTML(id)}','reject')">Reject</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Products</h2>
+      <div class="panel">
+        <div class="toolbar">
+          <button onclick="loadProducts()">Refresh Products</button>
+        </div>
+        <p class="muted">Approve products to make them available to customers. If your database uses different status values, the exact database error will appear here.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Photo</th><th>Product</th><th>Price</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Products</h2>';
+    showMessage('Could not load products: ' + err.message);
+  }
+}
+
+async function changeProductStatus(id, action) {
+  const product = cachedProducts.find(p => String(p.id) === String(id));
+  if (!product) {
+    showMessage('Product not found. Refresh the list.');
+    return;
   }
 
-  async function changeProductStatus(id, action) {
-    const approve = action === 'approve';
+  const candidates = action === 'approve'
+    ? ['Active', 'active', 'Approved', 'approved']
+    : ['Rejected', 'rejected'];
 
-    const confirmed = confirm(
-      approve
-        ? 'Approve this product and make it active if the database allows it?'
-        : 'Reject this product?'
-    );
+  let lastError = null;
 
-    if (!confirmed) return;
+  for (const status of candidates) {
+    const {error} = await db.from('products')
+      .update({status})
+      .eq('id', id);
 
-    const key = String(id);
-    if (busyProductIds.has(key)) return;
-
-    busyProductIds.add(key);
-    clearMessage();
-
-    try {
-      const candidates = approve
-        ? ['Active', 'Approved', 'active', 'approved']
-        : ['Rejected', 'rejected'];
-
-      let savedRow = null;
-      let lastEnumError = null;
-
-      for (const candidate of candidates) {
-        try {
-          savedRow = await tryStatusUpdate(id, candidate);
-          break;
-        } catch (error) {
-          if (isEnumValueError(error)) {
-            lastEnumError = error;
-            continue;
-          }
-          throw error;
-        }
-      }
-
-      if (!savedRow) {
-        throw new Error(
-          'Supabase rejected the attempted status values. ' +
-          (lastEnumError?.message || 'No accepted status was found.')
-        );
-      }
-
+    if (!error) {
       showMessage(
-        `Product status successfully saved as "${savedRow.status}".`,
+        action === 'approve' ? 'Product approval saved.' : 'Product rejection saved.',
         'success'
       );
-
       await loadProducts();
+      return;
+    }
 
-    } catch (error) {
-      let message = error?.message || String(error);
+    lastError = error;
 
-      if (error?.code === 'NO_ROW_UPDATED') {
-        message += ' This may be an admin UPDATE policy or row-access problem.';
-      } else if (
-        /permission|row-level security|\brls\b/i.test(message)
-      ) {
-        message += ' Supabase is blocking this update. Check the admin UPDATE policy.';
-      }
-
-      showMessage('Product status was NOT confirmed as saved: ' + message);
-    } finally {
-      busyProductIds.delete(key);
-      if (currentPage === 'products') await loadProducts();
+    /* Only try the next spelling if this is an enum/value problem. */
+    const msg = String(error.message || '').toLowerCase();
+    if (!msg.includes('enum') &&
+        !msg.includes('invalid input value') &&
+        !msg.includes('invalid value')) {
+      break;
     }
   }
 
-  // Format products stored in the orders.items JSON field.
-  function orderItemsHTML(value) {
-    let items = value;
+  showMessage('Could not update product status: ' +
+    (lastError?.message || 'Unknown error') +
+    '. The database status values or update permission may need checking.');
+}
 
-    if (typeof items === 'string') {
-      try {
-        items = JSON.parse(items);
-      } catch (_) {
-        items = [];
-      }
+/* Orders */
+function formatOrderItems(value) {
+  if (!value) return 'No item details saved';
+
+  let items = value;
+
+  if (typeof items === 'string') {
+    try { items = JSON.parse(items); }
+    catch { return escapeHTML(items); }
+  }
+
+  if (!Array.isArray(items)) {
+    return escapeHTML(JSON.stringify(items));
+  }
+
+  if (!items.length) return 'No items listed';
+
+  return items.map(item => {
+    if (typeof item === 'string') return escapeHTML(item);
+
+    const name = item.name || item.title || item.product_name ||
+      item.product || 'Product';
+    const qty = item.quantity ?? item.qty ?? item.count ?? 1;
+    const price = item.price ?? item.unit_price;
+
+    return `<div>• ${escapeHTML(name)} × ${escapeHTML(qty)}` +
+      (price != null ? ` — ${money(price)}` : '') + '</div>';
+  }).join('');
+}
+
+async function loadOrders() {
+  showLoading('Loading customer orders...');
+
+  try {
+    const {data, error} = await withTimeout(
+      db.from('orders').select('*').order('created_at', {ascending:false})
+    );
+
+    if (error) throw error;
+
+    cachedOrders = data || [];
+
+    if (!cachedOrders.length) {
+      document.getElementById('pageContent').innerHTML =
+        '<h2>Orders</h2><div class="panel">No orders found.</div>';
+      return;
     }
 
-    if (items && !Array.isArray(items) && Array.isArray(items.items)) {
-      items = items.items;
-    }
+    const rows = cachedOrders.map(o => {
+      const customerName = o.customer_name || o.name || '—';
+      const phone = o.customer_phone || o.phone || '—';
+      const address = o.delivery_address || o.address || '—';
+      const area = o.delivery_area || '—';
+      const status = o.status || 'pending';
+      const id = o.id;
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return '<span class="muted">No product details saved</span>';
-    }
+      return `<tr>
+        <td class="order-detail">
+          <strong>${escapeHTML(String(id).slice(0,12))}</strong><br>
+          <small class="muted">${escapeHTML(displayDate(o.created_at))}</small>
+        </td>
+        <td class="order-detail">
+          <strong>${escapeHTML(customerName)}</strong><br>
+          Phone: ${escapeHTML(phone)}<br>
+          Address: ${escapeHTML(address)}<br>
+          Area: ${escapeHTML(area)}
+        </td>
+        <td class="order-detail">
+          ${formatOrderItems(o.items)}
+        </td>
+        <td>
+          <strong>${money(o.total)}</strong><br>
+          Delivery: ${money(o.delivery_fee)}<br>
+          Payment: ${escapeHTML(o.payment_method || '—')}<br>
+          Payment status: ${escapeHTML(o.payment_status || '—')}
+        </td>
+        <td>
+          <span class="status">${escapeHTML(status)}</span><br><br>
+          <select id="order-status-${escapeHTML(id)}">
+            ${['pending','confirmed','processing','shipped','delivered','completed','cancelled']
+              .map(s => `<option value="${s}" ${String(status).toLowerCase()===s?'selected':''}>${s}</option>`)
+              .join('')}
+          </select>
+          <button onclick="updateOrderStatus('${escapeHTML(id)}')">Save Status</button>
+        </td>
+      </tr>`;
+    }).join('');
 
-    return `<div class="order-products">${items.map(item => {
-      if (!item || typeof item !== 'object') {
-        return `<div>${escapeHTML(item ?? 'Product')}</div>`;
-      }
-
-      const product = item.product && typeof item.product === 'object'
-        ? item.product
-        : item;
-
-      const name =
-        product.name ||
-        product.product_name ||
-        product.title ||
-        item.name ||
-        item.product_name ||
-        item.title ||
-        'Product';
-
-      const quantity = Number(item.quantity ?? item.qty ?? 1);
-      const price = Number(
-        item.price ?? item.unit_price ?? product.price ?? 0
-      );
-
-      const size = item.size || product.size || '';
-      const lineTotal = item.subtotal ?? item.line_total;
-
-      return `<div>
-        <strong>${escapeHTML(name)}</strong><br>
-        <small>Quantity: ${Number.isFinite(quantity) ? quantity : 1}</small>
-        ${size ? `<br><small>Size: ${escapeHTML(size)}</small>` : ''}
-        <br><small>${escapeHTML(money(price))} each</small>
-        ${lineTotal !== undefined
-          ? `<br><small>Item total: ${escapeHTML(money(lineTotal))}</small>`
-          : ''}
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Customer Orders</h2>
+      <div class="panel">
+        <div class="toolbar">
+          <button onclick="loadOrders()">Refresh Orders</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Order</th><th>Customer Details</th><th>Products Ordered</th><th>Payment & Total</th><th>Status Management</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>`;
-    }).join('')}</div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Customer Orders</h2>';
+    showMessage('Could not load orders: ' + err.message);
+  }
+}
+
+async function updateOrderStatus(id) {
+  const select = document.getElementById('order-status-' + id);
+  if (!select) return;
+
+  const newStatus = select.value;
+
+  const {error} = await db.from('orders')
+    .update({status:newStatus})
+    .eq('id', id);
+
+  if (error) {
+    showMessage('Could not update order status: ' + error.message);
+    return;
   }
 
-  async function loadOrders() {
-    $('summary').innerHTML = '';
-    $('sectionTitle').textContent = 'Customer orders';
-    $('content').innerHTML = 'Loading orders...';
+  showMessage('Order status updated successfully.', 'success');
+  await loadOrders();
+}
 
-    try {
-      const orders = await getRows('orders');
+/* Sellers */
+async function loadSellers() {
+  showLoading('Loading seller profiles...');
 
-      const pendingOrders = orders.filter(
-        o => normalizedStatus(o.status) === 'pending'
-      ).length;
+  try {
+    const {data, error} = await withTimeout(
+      db.from('profiles').select('*').order('created_at', {ascending:false})
+    );
 
-      const pendingPayments = orders.filter(
-        o => normalizedStatus(o.payment_status) === 'pending'
-      ).length;
+    if (error) throw error;
 
-      $('summary').innerHTML = [
-        ['Total orders', orders.length],
-        ['Pending orders', pendingOrders],
-        ['Pending payments', pendingPayments]
-      ].map(([label, value]) =>
-        `<div class="card">${escapeHTML(label)}<strong>${value}</strong></div>`
-      ).join('');
+    const sellers = (data || []).filter(p =>
+      String(p.role || '').toLowerCase() === 'seller'
+    );
 
-      if (!orders.length) {
-        $('content').innerHTML = '<p>No orders found yet.</p>';
-        return;
-      }
+    const rows = sellers.map(s => `<tr>
+      <td>${escapeHTML(s.full_name || s.name || s.username || '—')}</td>
+      <td>${escapeHTML(s.email || '—')}</td>
+      <td>${escapeHTML(s.phone || s.phone_number || '—')}</td>
+      <td>${escapeHTML(s.role || '—')}</td>
+      <td><small>${escapeHTML(s.id || '—')}</small></td>
+    </tr>`).join('');
 
-      orders.sort((a, b) =>
-        new Date(b.created_at || 0) - new Date(a.created_at || 0)
-      );
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Sellers</h2>
+      <div class="panel">
+        <button onclick="loadSellers()">Refresh Sellers</button>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>User ID</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="5">No seller profiles found.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Sellers</h2>';
+    showMessage('Could not load sellers: ' + err.message);
+  }
+}
 
-      $('content').innerHTML = `
-        <p class="muted">
-          Customer details, purchased products, delivery information and payment details.
-        </p>
+/* Replacements */
+async function loadReplacements() {
+  showLoading('Loading replacement requests...');
 
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer name and phone</th>
-              <th>Delivery address</th>
-              <th>Products ordered</th>
-              <th>Delivery area</th>
-              <th>Delivery fee</th>
-              <th>Order total</th>
-              <th>Payment method</th>
-              <th>Payment status</th>
-              <th>Order status</th>
-              <th>Order date</th>
-              <th>Delivered date</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${orders.map(o => {
-              const rawId = String(o.id ?? '—');
-              const displayId = /^\d+$/.test(rawId)
-                ? 'MM-' + rawId.padStart(5, '0')
-                : rawId;
+  try {
+    const {data, error} = await withTimeout(
+      db.from('replacements').select('*').order('created_at', {ascending:false})
+    );
 
-              const area = o.delivery_area === 'inside'
-                ? 'Inside Biratnagar'
-                : o.delivery_area === 'outside'
-                  ? 'Outside Biratnagar'
-                  : o.delivery_area || '—';
+    if (error) throw error;
 
-              const customerName =
-                o.customer_name || o.full_name || o.name || '';
+    const rows = (data || []).map(r => `<tr>
+      <td>${escapeHTML(r.id || '—')}</td>
+      <td>${escapeHTML(r.order_id || '—')}</td>
+      <td>${escapeHTML(r.customer_name || r.customer_id || '—')}</td>
+      <td>${escapeHTML(r.reason || r.description || '—')}</td>
+      <td>${escapeHTML(r.status || '—')}</td>
+      <td>${escapeHTML(displayDate(r.created_at))}</td>
+    </tr>`).join('');
 
-              const phone =
-                o.customer_phone || o.phone || o.phone_number || '';
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Replacement Requests</h2>
+      <div class="panel">
+        <button onclick="loadReplacements()">Refresh</button>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>Request ID</th><th>Order ID</th><th>Customer</th><th>Reason</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="6">No replacement requests found.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Replacement Requests</h2>';
+    showMessage('Could not load replacements. Check whether the replacements table exists: ' + err.message);
+  }
+}
 
-              const address =
-                o.delivery_address || o.address || '';
+/* Categories */
+async function loadCategories() {
+  showLoading('Loading categories...');
 
-              const paymentMethod = String(
-                o.payment_method || '—'
-              ).replaceAll('_', ' ');
+  try {
+    const {data, error} = await withTimeout(
+      db.from('categories').select('*').order('name', {ascending:true})
+    );
 
-              return `<tr>
-                <td class="order-id">
-                  <strong>$
+    if (error) throw error;
+
+    const rows = (data || []).map(c => `<tr>
+      <td>${escapeHTML(c.name || c.title || '—')}</td>
+      <td>${escapeHTML(c.id || '—')}</td>
+    </tr>`).join('');
+
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Categories</h2>
+      <div class="panel">
+        <button onclick="loadCategories()">Refresh Categories</button>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>Category Name</th><th>Category ID</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="2">No categories found.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Categories</h2>';
+    showMessage('Could not load categories: ' + err.message);
+  }
+}
+
+startApp();
+</script>
+</body>
+</html>
+
