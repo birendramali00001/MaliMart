@@ -8,40 +8,33 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#222}
-header{background:#123c2d;color:white;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+header{background:#123c2d;color:white;padding:16px;text-align:center}
 header h1{margin:0;font-size:25px}
-header p{margin:5px 0 0;font-size:13px;color:#d1fae5}
+header p{margin:5px 0 0;color:#d1fae5}
 .container{max-width:1000px;margin:auto;padding:15px}
-.hero,.cart{background:white;border-radius:14px;padding:20px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
-.hero h2,.cart h2{margin-top:0}
+.hero,.cart,.authbox{background:white;border-radius:14px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px #00000012}
 .notice{background:#ecfdf5;border-left:4px solid #15945b;padding:12px;border-radius:8px;font-size:14px}
 .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
-.product{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;min-width:0}
-.pic{height:165px;background:#eef2f7;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;overflow:hidden}
+.product,.ordercard{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;overflow-wrap:anywhere}
+.pic{height:160px;background:#eef2f7;border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#9ca3af}
 .pic img{width:100%;height:100%;object-fit:cover}
-.product h3{font-size:16px;margin:10px 0 5px;overflow-wrap:anywhere}
-.price{font-weight:bold;font-size:18px;margin:8px 0}
-.stock{font-size:12px;color:#067647;margin:5px 0 10px}
+.product h3{font-size:16px}
+.price{font-weight:bold;font-size:18px}
+.stock,.small{font-size:13px;color:#6b7280}
 button{border:0;border-radius:8px;padding:11px 13px;background:#123c2d;color:white;cursor:pointer}
-button:disabled{opacity:.55;cursor:not-allowed}
-button.remove{background:#fee2e2;color:#991b1b;padding:7px 9px}
+button:disabled{opacity:.55}
+button.remove{background:#fee2e2;color:#991b1b}
 form{display:grid;gap:10px}
 input,select,textarea{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0}
 .row span{overflow-wrap:anywhere}
 .total{font-size:19px;font-weight:bold;border-top:1px solid #ddd;padding-top:12px}
-.small{font-size:13px;color:#6b7280}
-.message{padding:10px;border-radius:8px;overflow-wrap:anywhere;white-space:pre-wrap}
+.message{padding:10px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.hidden{display:none!important}
+.linkbtn{background:transparent;color:#123c2d;text-decoration:underline;padding:5px}
+.accountbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
-@media(max-width:450px){
-.container{padding:10px}
-.hero,.cart{padding:15px}
-.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.product{padding:9px}
-.pic{height:135px}
-.product h3{font-size:14px}
-.product button{width:100%;padding:10px 5px}
-}
+@media(max-width:450px){.container{padding:10px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.pic{height:130px}.product{padding:9px}}
 </style>
 </head>
 <body>
@@ -57,13 +50,40 @@ footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
 <div class="notice">Delivery: <b>Rs. 45 inside Biratnagar</b> · <b>Rs. 65 outside Biratnagar</b></div>
 </section>
 
-<section class="hero">
+<section id="authSection" class="authbox">
+<h2>Customer Account</h2>
+<p class="small">Register or log in to shop and track your orders.</p>
+<div id="authMessage" class="message small" role="status"></div>
+<form id="authForm">
+<input id="authName" maxlength="100" placeholder="Full name (registration)">
+<input id="authPhone" maxlength="20" placeholder="Phone number (registration)" inputmode="tel">
+<input id="authEmail" type="email" required placeholder="Email address" autocomplete="email">
+<input id="authPassword" type="password" required minlength="6" placeholder="Password (at least 6 characters)">
+<button id="authSubmit" type="submit">Log In</button>
+</form>
+<div class="row">
+<button id="toggleAuth" type="button" class="linkbtn">Create a new account</button>
+<button id="forgotPassword" type="button" class="linkbtn">Forgot password?</button>
+</div>
+</section>
+
+<section id="accountSection" class="authbox hidden">
+<div class="accountbar">
+<div><b id="accountName">Customer</b><div class="small">Customer ID: <b id="customerCode">Loading...</b></div></div>
+<button id="logoutButton" type="button">Log Out</button>
+</div>
+<h3>My Orders</h3>
+<button id="refreshOrders" type="button">Refresh Orders</button>
+<div id="ordersList" class="small">Your orders will appear here.</div>
+</section>
+
+<section id="productSection" class="hero customerOnly hidden">
 <h2>Products</h2>
-<p id="catalogMessage" class="small" role="status">Loading approved products...</p>
+<p id="catalogMessage" class="small">Loading approved products...</p>
 <div id="products" class="products"></div>
 </section>
 
-<section class="cart">
+<section class="cart customerOnly hidden">
 <h2>🛒 Your Cart</h2>
 <div id="cartItems"><p class="small">Your cart is empty.</p></div>
 <div class="row"><span>Subtotal</span><span id="subtotal">Rs. 0</span></div>
@@ -71,26 +91,24 @@ footer{text-align:center;padding:25px;color:#6b7280;font-size:13px}
 <div class="row total"><span>Total</span><span id="total">Rs. 0</span></div>
 </section>
 
-<section class="hero">
+<section class="hero customerOnly hidden">
 <h2>Place Order</h2>
 <form id="orderForm">
-<input id="customerName" required maxlength="100" placeholder="Your name" autocomplete="name">
+<input id="customerName" required maxlength="100" placeholder="Your name" autocomplete="name" readonly>
 <input id="customerPhone" required maxlength="20" placeholder="Phone number" inputmode="tel" autocomplete="tel">
-<input id="address" required maxlength="300" placeholder="Full delivery address" autocomplete="street-address">
-
+<input id="address" required maxlength="300" placeholder="Full delivery address">
 <select id="area" required>
 <option value="">Select delivery area</option>
 <option value="inside">Inside Biratnagar</option>
 <option value="outside">Outside Biratnagar</option>
 </select>
-
 <textarea id="notes" maxlength="1000" rows="3" placeholder="Order notes (optional)"></textarea>
 <button id="orderButton" type="submit">Place Order</button>
 </form>
 <p id="orderMessage" class="message small" role="status"></p>
 </section>
 
-<section class="hero">
+<section class="hero customerOnly hidden">
 <h2>Replacement Policy</h2>
 <p>Request an eligible replacement within <b>2 days after delivery</b>.</p>
 <p><b>No cash refunds.</b> One replacement per eligible order.</p>
@@ -110,397 +128,411 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let products = [];
 let cart = [];
 let submitting = false;
+let currentUser = null;
+let registering = false;
+let authVersion = 0;
 
 const $ = id => document.getElementById(id);
 
 function money(value) {
   const n = Number(value);
-  return "Rs. " + (
-    Number.isFinite(n) ? n.toLocaleString("en-IN") : "0"
-  );
+  return "Rs. " + (Number.isFinite(n) ? n.toLocaleString("en-IN") : "0");
 }
 
 function firstValue(row, names) {
   for (const name of names) {
-    if (
-      row[name] !== undefined &&
-      row[name] !== null &&
-      row[name] !== ""
-    ) {
-      return row[name];
-    }
+    if (row[name] !== undefined && row[name] !== null && row[name] !== "") return row[name];
   }
   return null;
 }
 
 function normalizeProduct(row) {
   const status = String(row.status || "").trim().toLowerCase();
-
   if (!["active", "approved"].includes(status)) return null;
 
-  const available = firstValue(row, [
-    "stock_available", "is_available", "available", "in_stock"
-  ]);
+  const available = firstValue(row, ["stock_available","is_available","available","in_stock"]);
+  if (available === false || String(available).toLowerCase() === "false") return null;
 
-  if (
-    available === false ||
-    String(available).toLowerCase() === "false"
-  ) return null;
+  const stock = firstValue(row, ["stock","quantity","stock_quantity"]);
+  if (stock !== null && Number.isFinite(Number(stock)) && Number(stock) <= 0) return null;
 
-  const stock = firstValue(row, [
-    "stock", "quantity", "stock_quantity"
-  ]);
+  const id = firstValue(row, ["id","product_id","uuid"]);
+  const name = firstValue(row, ["name","product_name","title"]);
+  const price = firstValue(row, ["selling_price","sale_price","price","final_price","amount"]);
+  const image = firstValue(row, ["image_url","image","photo_url","product_image","photo"]);
+  const size = firstValue(row, ["size","product_size"]);
 
-  if (
-    stock !== null &&
-    Number.isFinite(Number(stock)) &&
-    Number(stock) <= 0
-  ) return null;
-
-  const id = firstValue(row, ["id", "product_id", "uuid"]);
-  const name = firstValue(row, ["name", "product_name", "title"]);
-  const price = firstValue(row, [
-    "selling_price", "sale_price", "price", "final_price", "amount"
-  ]);
-  const image = firstValue(row, [
-    "image_url", "image", "photo_url", "product_image", "photo"
-  ]);
-  const size = firstValue(row, ["size", "product_size"]);
-
-  if (
-    id == null ||
-    !name ||
-    price == null ||
-    !Number.isFinite(Number(price)) ||
-    Number(price) < 0
-  ) return null;
-
-  return {
-    id: String(id),
-    name: String(name),
-    price: Number(price),
-    image: image ? String(image) : "",
-    size: size ? String(size) : ""
-  };
+  if (id == null || !name || price == null || !Number.isFinite(Number(price)) || Number(price) < 0) return null;
+  return {id:String(id),name:String(name),price:Number(price),image:image?String(image):"",size:size?String(size):""};
 }
 
-function showMessage(message, type = "info") {
-  const el = $("orderMessage");
-  el.textContent = message;
+function showMessage(message,type="info") {
+  const el=$("orderMessage");
+  el.textContent=message;
+  el.style.background=type==="error"?"#fef2f2":type==="success"?"#ecfdf5":"#f3f4f6";
+  el.style.color=type==="error"?"#991b1b":type==="success"?"#065f46":"#374151";
+}
 
-  el.style.background =
-    type === "error" ? "#fef2f2" :
-    type === "success" ? "#ecfdf5" : "#f3f4f6";
-
-  el.style.color =
-    type === "error" ? "#991b1b" :
-    type === "success" ? "#065f46" : "#374151";
+function authMessage(message,type="info") {
+  const el=$("authMessage");
+  el.textContent=message;
+  el.style.background=type==="error"?"#fef2f2":type==="success"?"#ecfdf5":"#f3f4f6";
+  el.style.color=type==="error"?"#991b1b":type==="success"?"#065f46":"#374151";
 }
 
 async function fetchApprovedProducts() {
-  const { data, error } = await db.from("products").select("*");
-
-  if (error) throw error;
-
-  return (data || []).map(normalizeProduct).filter(Boolean);
+  const {data,error}=await db.from("products").select("*");
+  if(error) throw error;
+  return (data||[]).map(normalizeProduct).filter(Boolean);
 }
 
 async function loadProducts() {
-  $("catalogMessage").textContent = "Loading approved products...";
+  $("catalogMessage").textContent="Loading approved products...";
   $("products").replaceChildren();
-
   try {
-    products = await fetchApprovedProducts();
-
-    cart = cart.filter(item =>
-      products.some(p => p.id === item.id)
-    );
-
+    products=await fetchApprovedProducts();
+    cart=cart.filter(item=>products.some(p=>p.id===item.id));
     renderProducts();
     renderCart();
-
-    $("catalogMessage").textContent = products.length
-      ? products.length + " approved product(s) available."
-      : "No approved products are available right now.";
-
-  } catch (error) {
-    console.error("Product loading error:", error);
-    $("catalogMessage").textContent =
-      "Could not load products. Please refresh.";
+    $("catalogMessage").textContent=products.length
+      ?products.length+" approved product(s) available."
+      :"No approved products are available right now.";
+  } catch(error) {
+    console.error("Product loading error:",error);
+    $("catalogMessage").textContent="Could not load products. Please refresh.";
   }
 }
 
 function renderProducts() {
-  const box = $("products");
+  const box=$("products");
   box.replaceChildren();
-
-  products.forEach(p => {
-    const card = document.createElement("article");
-    card.className = "product";
-
-    const pic = document.createElement("div");
-    pic.className = "pic";
-
-    if (p.image && /^https?:\/\//i.test(p.image)) {
-      const img = document.createElement("img");
-      img.src = p.image;
-      img.alt = p.name;
-      img.loading = "lazy";
-
-      img.onerror = () => {
-        pic.replaceChildren();
-        pic.textContent = "Image unavailable";
-      };
-
+  products.forEach(p=>{
+    const card=document.createElement("article");
+    card.className="product";
+    const pic=document.createElement("div");
+    pic.className="pic";
+    if(p.image && /^https?:\/\//i.test(p.image)) {
+      const img=document.createElement("img");
+      img.src=p.image; img.alt=p.name; img.loading="lazy";
+      img.onerror=()=>{pic.replaceChildren();pic.textContent="Image unavailable";};
       pic.appendChild(img);
-    } else {
-      pic.textContent = "Product image";
-    }
+    } else pic.textContent="Product image";
 
-    const title = document.createElement("h3");
-    title.textContent = p.name;
-
-    const price = document.createElement("div");
-    price.className = "price";
-    price.textContent = money(p.price);
-
-    const stock = document.createElement("div");
-    stock.className = "stock";
-    stock.textContent = "Available";
-
-    const add = document.createElement("button");
-    add.type = "button";
-    add.textContent = "Add to Cart";
-    add.addEventListener("click", () => addToCart(p.id));
-
-    card.append(pic, title);
-
-    if (p.size) {
-      const size = document.createElement("p");
-      size.className = "small";
-      size.textContent = "Size: " + p.size;
+    const title=document.createElement("h3");
+    title.textContent=p.name;
+    const price=document.createElement("div");
+    price.className="price"; price.textContent=money(p.price);
+    const stock=document.createElement("div");
+    stock.className="stock"; stock.textContent="Available";
+    const add=document.createElement("button");
+    add.type="button"; add.textContent="Add to Cart";
+    add.addEventListener("click",()=>addToCart(p.id));
+    card.append(pic,title);
+    if(p.size) {
+      const size=document.createElement("p");
+      size.className="small"; size.textContent="Size: "+p.size;
       card.appendChild(size);
     }
-
-    card.append(price, stock, add);
+    card.append(price,stock,add);
     box.appendChild(card);
   });
 }
 
 function addToCart(id) {
-  const p = products.find(x => x.id === String(id));
-  if (!p) return;
-
-  const existing = cart.find(x => x.id === p.id);
-
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ ...p, qty: 1 });
-  }
-
+  const p=products.find(x=>x.id===String(id));
+  if(!p) return;
+  const existing=cart.find(x=>x.id===p.id);
+  if(existing) existing.qty+=1;
+  else cart.push({...p,qty:1});
   renderCart();
 }
 
 function removeFromCart(id) {
-  cart = cart.filter(p => p.id !== String(id));
+  cart=cart.filter(p=>p.id!==String(id));
   renderCart();
 }
 
 function renderCart() {
-  const box = $("cartItems");
+  const box=$("cartItems");
   box.replaceChildren();
-
-  let subtotal = 0;
-
-  if (!cart.length) {
-    const empty = document.createElement("p");
-    empty.className = "small";
-    empty.textContent = "Your cart is empty.";
+  let subtotal=0;
+  if(!cart.length) {
+    const empty=document.createElement("p");
+    empty.className="small"; empty.textContent="Your cart is empty.";
     box.appendChild(empty);
   }
-
-  cart.forEach(item => {
-    subtotal += item.price * item.qty;
-
-    const row = document.createElement("div");
-    row.className = "row";
-
-    const label = document.createElement("span");
-    label.textContent = item.name + " × " + item.qty;
-
-    const right = document.createElement("span");
-    right.textContent = money(item.price * item.qty) + " ";
-
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "remove";
-    remove.textContent = "Remove";
-    remove.addEventListener("click", () => removeFromCart(item.id));
-
+  cart.forEach(item=>{
+    subtotal+=item.price*item.qty;
+    const row=document.createElement("div");
+    row.className="row";
+    const label=document.createElement("span");
+    label.textContent=item.name+" × "+item.qty;
+    const right=document.createElement("span");
+    right.textContent=money(item.price*item.qty)+" ";
+    const remove=document.createElement("button");
+    remove.type="button"; remove.className="remove"; remove.textContent="Remove";
+    remove.addEventListener("click",()=>removeFromCart(item.id));
     right.appendChild(remove);
-    row.append(label, right);
+    row.append(label,right);
     box.appendChild(row);
   });
-
-  const area = $("area").value;
-
-  const fee = cart.length
-    ? (area === "inside" ? 45 : area === "outside" ? 65 : 0)
-    : 0;
-
-  $("subtotal").textContent = money(subtotal);
-  $("delivery").textContent = money(fee);
-  $("total").textContent = money(subtotal + fee);
+  const area=$("area").value;
+  const fee=cart.length?(area==="inside"?45:area==="outside"?65:0):0;
+  $("subtotal").textContent=money(subtotal);
+  $("delivery").textContent=money(fee);
+  $("total").textContent=money(subtotal+fee);
 }
+$("area").addEventListener("change",renderCart);
 
-$("area").addEventListener("change", renderCart);
-
-/*
-  Checkout uses the known orders columns.
-  delivery_area must be exactly "inside" or "outside".
-  Payment and status use the enum values already added.
-*/
 async function insertOrder(order) {
-  const payload = {
-    customer_name: order.name,
-    customer_phone: order.phone,
-    delivery_address: order.address,
-    delivery_area: order.area,
-    items: order.items,
-    delivery_fee: order.delivery,
-    payment_method: "cash_on_delivery",
-    payment_status: "pending",
-    total: order.total,
-    status: "pending"
+  if(!currentUser) throw new Error("Please log in first.");
+  const payload={
+    customer_id:currentUser.id,
+    customer_name:order.name,
+    customer_phone:order.phone,
+    delivery_address:order.address,
+    delivery_area:order.area,
+    items:order.items,
+    delivery_fee:order.delivery,
+    payment_method:"cash_on_delivery",
+    payment_status:"pending",
+    total:order.total,
+    status:"pending"
   };
-
-  const { error } = await db.from("orders").insert(payload);
-
-  if (error) {
-    console.error("MaliMart order submission error:", error);
-    throw error;
-  }
+  const {error}=await db.from("orders").insert(payload);
+  if(error) throw error;
 }
 
-$("orderForm").addEventListener("submit", async event => {
+$("orderForm").addEventListener("submit",async event=>{
   event.preventDefault();
+  if(!currentUser){showMessage("Please log in first.","error");return;}
+  if(submitting)return;
+  if(!cart.length){showMessage("Please add at least one product to your cart.","error");return;}
 
-  if (submitting) return;
+  const name=currentUser.user_metadata?.full_name||$("customerName").value.trim();
+  const phone=$("customerPhone").value.trim()||currentUser.user_metadata?.phone||"";
+  const address=$("address").value.trim();
+  const area=$("area").value;
+  if(!name||!phone||!address||!area){showMessage("Please complete all required fields.","error");return;}
+  if(!["inside","outside"].includes(area)){showMessage("Please select a valid delivery area.","error");return;}
 
-  if (!cart.length) {
-    showMessage("Please add at least one product to your cart.", "error");
-    return;
-  }
-
-  const name = $("customerName").value.trim();
-  const phone = $("customerPhone").value.trim();
-  const address = $("address").value.trim();
-  const area = $("area").value;
-  const notes = $("notes").value.trim();
-
-  if (!name || !phone || !address || !area) {
-    showMessage("Please complete all required fields.", "error");
-    return;
-  }
-
-  // Validate the database's exact accepted values.
-  if (!["inside", "outside"].includes(area)) {
-    showMessage("Please select a valid delivery area.", "error");
-    return;
-  }
-
-  submitting = true;
-  $("orderButton").disabled = true;
-  $("orderButton").textContent = "Checking products...";
+  submitting=true;
+  $("orderButton").disabled=true;
+  $("orderButton").textContent="Checking products...";
   showMessage("Checking current product availability...");
 
   try {
-    const freshProducts = await fetchApprovedProducts();
-    const verifiedCart = [];
-
-    for (const item of cart) {
-      const fresh = freshProducts.find(p => p.id === item.id);
-
-      if (!fresh) {
-        products = freshProducts;
-        cart = cart.filter(p =>
-          freshProducts.some(f => f.id === p.id)
-        );
-
-        renderProducts();
-        renderCart();
-
-        showMessage(
-          item.name +
-          " is no longer available or approved. Your cart has been updated.",
-          "error"
-        );
+    const freshProducts=await fetchApprovedProducts();
+    const verifiedCart=[];
+    for(const item of cart) {
+      const fresh=freshProducts.find(p=>p.id===item.id);
+      if(!fresh) {
+        products=freshProducts;
+        cart=cart.filter(p=>freshProducts.some(f=>f.id===p.id));
+        renderProducts();renderCart();
+        showMessage(item.name+" is no longer available or approved. Your cart has been updated.","error");
         return;
       }
-
-      verifiedCart.push({ ...fresh, qty: item.qty });
+      verifiedCart.push({...fresh,qty:item.qty});
     }
 
-    const subtotal = verifiedCart.reduce(
-      (sum, item) => sum + item.price * item.qty,
-      0
-    );
-
-    const delivery = area === "inside" ? 45 : 65;
-    const total = subtotal + delivery;
-
-    const orderItems = verifiedCart.map(item => ({
-      product_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.qty,
-      size: item.size
+    const subtotal=verifiedCart.reduce((sum,item)=>sum+item.price*item.qty,0);
+    const delivery=area==="inside"?45:65;
+    const total=subtotal+delivery;
+    const orderItems=verifiedCart.map(item=>({
+      product_id:item.id,name:item.name,price:item.price,quantity:item.qty,size:item.size
     }));
 
-    $("orderButton").textContent = "Submitting order...";
-
-    await insertOrder({
-      name,
-      phone,
-      address,
-      area,
-      notes,
-      subtotal,
-      delivery,
-      total,
-      items: orderItems
-    });
-
-    showMessage(
-      "Order saved successfully! Keep your phone available for confirmation.",
-      "success"
-    );
-
-    cart = [];
+    $("orderButton").textContent="Submitting order...";
+    await insertOrder({name,phone,address,area,delivery,total,items:orderItems});
+    showMessage("Order saved successfully! Keep your phone available for confirmation.","success");
+    cart=[];
     renderCart();
     $("orderForm").reset();
+    $("customerName").value=currentUser.user_metadata?.full_name||"";
+    $("customerPhone").value=currentUser.user_metadata?.phone||"";
     renderCart();
-
-  } catch (error) {
-    console.error("Checkout error:", error);
-
-    const detail = error && error.message
-      ? error.message
-      : "Unknown database or network error.";
-
-    showMessage(
-      "ORDER NOT SAVED.\nReason: " + detail +
-      "\nYour cart has been kept. Please do not submit repeatedly until this error is fixed.",
-      "error"
-    );
-
+    await loadMyOrders();
+  } catch(error) {
+    console.error("Checkout error:",error);
+    showMessage("ORDER NOT SAVED.\nReason: "+(error?.message||"Unknown database or network error.")+
+      "\nYour cart has been kept. Please do not submit repeatedly until this error is fixed.","error");
   } finally {
-    submitting = false;
-    $("orderButton").disabled = false;
-    $("orderButton").textContent = "Place Order";
+    submitting=false;
+    $("orderButton").disabled=false;
+    $("orderButton").textContent="Place Order";
   }
 });
+
+function setAuthMode(isRegister) {
+  registering=isRegister;
+  $("authName").classList.toggle("hidden",!registering);
+  $("authPhone").classList.toggle("hidden",!registering);
+  $("authName").required=registering;
+  $("authPhone").required=registering;
+  $("authSubmit").textContent=registering?"Create Account":"Log In";
+  $("toggleAuth").textContent=registering?"I already have an account":"Create a new account";
+}
+$("toggleAuth").addEventListener("click",()=>{
+  setAuthMode(!registering);
+  authMessage("");
+});
+
+$("authForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const email=$("authEmail").value.trim().toLowerCase();
+  const password=$("authPassword").value;
+  $("authSubmit").disabled=true;
+  try {
+    if(registering) {
+      const fullName=$("authName").value.trim();
+      const phone=$("authPhone").value.trim();
+      if(!fullName||!phone)throw new Error("Enter your name and phone number.");
+      const {error}=await db.auth.signUp({
+        email,password,
+        options:{
+          emailRedirectTo:window.location.origin+window.location.pathname,
+          data:{full_name:fullName,phone:phone}
+        }
+      });
+      if(error)throw error;
+      authMessage("Registration submitted. Check your email to confirm your account, then log in.","success");
+      setAuthMode(false);
+      $("authPassword").value="";
+    } else {
+      const {error}=await db.auth.signInWithPassword({email,password});
+      if(error)throw error;
+    }
+  } catch(error) {
+    authMessage(error.message||"Authentication failed.","error");
+  } finally {
+    $("authSubmit").disabled=false;
+  }
+});
+
+$("forgotPassword").addEventListener("click",async()=>{
+  const email=$("authEmail").value.trim().toLowerCase();
+  if(!email){authMessage("Enter your email address first.");return;}
+  try {
+    const {error}=await db.auth.resetPasswordForEmail(email,{
+      redirectTo:window.location.origin+window.location.pathname
+    });
+    if(error)throw error;
+    authMessage("If this email is registered, a password reset link will be sent. Check your inbox.","success");
+  } catch(error) {
+    authMessage(error.message||"Could not request password reset.","error");
+  }
+});
+
+$("logoutButton").addEventListener("click",async()=>{
+  const {error}=await db.auth.signOut();
+  if(error)authMessage(error.message,"error");
+});
+$("refreshOrders").addEventListener("click",loadMyOrders);
+
+async function showCustomer(user) {
+  const version=++authVersion;
+  currentUser=user||null;
+  $("authSection").classList.toggle("hidden",!!user);
+  $("accountSection").classList.toggle("hidden",!user);
+  document.querySelectorAll(".customerOnly").forEach(el=>el.classList.toggle("hidden",!user));
+
+  if(!user) {
+    $("customerName").value="";
+    $("customerPhone").value="";
+    $("customerCode").textContent="—";
+    $("ordersList").textContent="Log in to view your orders.";
+    return;
+  }
+
+  $("accountName").textContent=user.user_metadata?.full_name||user.email||"Customer";
+  $("customerName").value=user.user_metadata?.full_name||"";
+  $("customerPhone").value=user.user_metadata?.phone||"";
+
+  try {
+    const {data:profile,error}=await db.from("profiles")
+      .select("id,full_name,phone,role,customer_code")
+      .eq("id",user.id).maybeSingle();
+    if(version!==authVersion)return;
+    if(error)throw error;
+    if(profile&&profile.role&&profile.role!=="customer") {
+      await db.auth.signOut();
+      authMessage("This account is not a customer account.","error");
+      return;
+    }
+    $("accountName").textContent=profile?.full_name||user.user_metadata?.full_name||user.email||"Customer";
+    $("customerName").value=profile?.full_name||user.user_metadata?.full_name||"";
+    $("customerPhone").value=profile?.phone||user.user_metadata?.phone||"";
+    $("customerCode").textContent=profile?.customer_code||"Not assigned yet";
+  } catch(error) {
+    if(version!==authVersion)return;
+    $("customerCode").textContent="Could not load";
+    console.error("Profile load error:",error);
+  }
+  if(version===authVersion)await loadMyOrders();
+}
+
+async function loadMyOrders() {
+  const user=currentUser;
+  if(!user)return;
+  $("ordersList").textContent="Loading your orders...";
+  try {
+    const {data,error}=await db.from("orders")
+      .select("id,created_at,items,total,delivery_fee,payment_method,payment_status,status,delivery_area")
+      .eq("customer_id",user.id)
+      .order("created_at",{ascending:false}).limit(50);
+    if(error)throw error;
+    if(currentUser?.id!==user.id)return;
+    const box=$("ordersList");
+    box.replaceChildren();
+    if(!data||!data.length){box.textContent="No orders yet. Your future orders will appear here.";return;}
+    data.forEach(order=>{
+      const card=document.createElement("div");
+      card.className="ordercard";
+      const heading=document.createElement("b");
+      heading.textContent="Order #"+String(order.id).slice(0,8);
+      const date=document.createElement("p");
+      date.className="small";
+      date.textContent=order.created_at?new Date(order.created_at).toLocaleString():"";
+      const status=document.createElement("p");
+      status.textContent="Status: "+(order.status||"pending")+" · Payment: "+(order.payment_status||"pending");
+      const method=document.createElement("p");
+      method.textContent="Payment method: "+(order.payment_method||"cash_on_delivery");
+      const items=document.createElement("p");
+      items.className="small";
+      const list=Array.isArray(order.items)?order.items:[];
+      items.textContent="Items: "+list.map(i=>(i.name||"Product")+" × "+(i.quantity||i.qty||1)).join(", ");
+      const total=document.createElement("b");
+      total.textContent="Total: "+money(order.total);
+      card.append(heading,date,status,method,items,total);
+      box.appendChild(card);
+    });
+  } catch(error) {
+    console.error("Orders load error:",error);
+    $("ordersList").textContent="Could not load orders. The orders table's customer read policy may need fixing.";
+  }
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY") {
+    const newPassword=prompt("Enter your new password (at least 6 characters):");
+    if(newPassword&&newPassword.length>=6) {
+      db.auth.updateUser({password:newPassword}).then(({error})=>{
+        if(error)authMessage(error.message,"error");
+        else authMessage("Password updated successfully.","success");
+      });
+    } else if(newPassword!==null)authMessage("Password must contain at least 6 characters.","error");
+    return;
+  }
+  showCustomer(session?.user||null);
+});
+
+(async function initAuth(){
+  setAuthMode(false);
+  const {data,error}=await db.auth.getSession();
+  if(error)authMessage(error.message,"error");
+  await showCustomer(data?.session?.user||null);
+})();
 
 renderCart();
 loadProducts();
