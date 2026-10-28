@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -598,4 +599,51 @@ async function loadReplacements() {
         <button onclick="loadReplacements()">Refresh</button>
         <div class="table-wrap" style="margin-top:12px">
           <table>
-            <thead><tr><th>Request ID</th><th>Order ID</th><th>Customer</th><th>Reason<
+            <thead><tr><th>Request ID</th><th>Order ID</th><th>Customer</th><th>Reason</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="6">No replacement requests found.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Replacement Requests</h2>';
+    showMessage('Could not load replacements. Check whether the replacements table exists: ' + err.message);
+  }
+}
+
+/* Categories */
+async function loadCategories() {
+  showLoading('Loading categories...');
+
+  try {
+    const {data, error} = await withTimeout(
+      db.from('categories').select('*').order('name', {ascending:true})
+    );
+
+    if (error) throw error;
+
+    const rows = (data || []).map(c => `<tr>
+      <td>${escapeHTML(c.name || c.title || '—')}</td>
+      <td>${escapeHTML(c.id || '—')}</td>
+    </tr>`).join('');
+
+    document.getElementById('pageContent').innerHTML = `
+      <h2>Categories</h2>
+      <div class="panel">
+        <button onclick="loadCategories()">Refresh Categories</button>
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr><th>Category Name</th><th>Category ID</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="2">No categories found.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('pageContent').innerHTML = '<h2>Categories</h2>';
+    showMessage('Could not load categories: ' + err.message);
+  }
+}
+
+startApp();
+</script>
+</body>
+</html>
