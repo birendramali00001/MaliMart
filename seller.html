@@ -404,8 +404,16 @@ $("registerBtn").addEventListener("click",async()=>{
  const button=$("registerBtn");
  setBusy(button,true,"Creating account...");
 
- try{
-  const {data,error}=await db.auth.signUp({email,password});
+ try {
+  const {data,error}=await db.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{
+        role:"seller"
+      }
+    }
+  });
   if(error) throw error;
 
   if(data.session){
