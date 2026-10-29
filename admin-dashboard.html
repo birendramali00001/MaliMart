@@ -157,14 +157,37 @@ async function startApp() {
     if (!window.supabase || !window.supabase.createClient) {
       throw new Error('Supabase could not load. Check your internet connection and reload.');
     }
+const result = await withTimeout(db.auth.getSession());
 
-    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
+if (result.error) throw result.error;
+
+const session = result.data?.session;
+
+if (!session) {
+  loading.textContent =
+    'No active login found. Opening the admin login page...';
+  window.location.replace('admin.html');
+  return;
+}
+
+if (
+  (session.user?.email || '').toLowerCase() !==
+  'birendramali00001@gmail.com'
+) {
+  await db.auth.signOut();
+  loading.textContent =
+    'Access denied. Please use the main admin account.';
+  window.location.replace('admin.html');
+  return;
+}
+
+document.getElementById('adminEmail').textContent =
+  session.user.email;
+
+loading.classList.add('hidden');
+document.getElementById('app').classList.remove('hidden');
+
+await openPage('dashboard');
 
     const result = await withTimeout(db.auth.getSession());
 
