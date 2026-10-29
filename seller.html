@@ -3,438 +3,381 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#087b45">
 <title>MaliMart Seller Panel</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#f3f5f7;margin:0;color:#222}
 header{background:#087b45;color:white;padding:18px;text-align:center}
+header h1{margin:0 0 8px}
+header p{margin:0}
 main{max-width:700px;margin:20px auto;padding:12px}
 .card{background:white;padding:18px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 9px #0001}
 h2{margin-top:0;color:#087b45}
+label{display:block;margin-top:10px;font-size:14px}
 input,select,button{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:7px;font-size:16px}
+input[type=checkbox]{width:auto}
 button{background:#087b45;color:white;border:0;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.6}
+button:disabled{opacity:.6;cursor:not-allowed}
 button.secondary{background:#555}
 img.preview{display:block;width:180px;height:180px;object-fit:contain;background:#fff;border:1px solid #ddd;margin:10px auto}
 .product{border:1px solid #ddd;padding:12px;border-radius:9px;margin:12px 0;overflow-wrap:anywhere}
 .product img{display:block;width:140px;height:140px;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:7px;margin-bottom:10px}
 .photo-fallback{width:140px;height:140px;display:flex;align-items:center;justify-content:center;text-align:center;background:#f1f1f1;color:#666;border-radius:7px;margin-bottom:10px;padding:10px;font-size:13px}
-.hidden{display:none}
-.note{font-size:13px;color:#555}
-.message{padding:10px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere}
+.hidden{display:none!important}
+.note{font-size:13px;color:#555;line-height:1.5}
+.message{padding:12px;border-radius:7px;background:#eef6ee;margin:10px 0;overflow-wrap:anywhere;line-height:1.5}
 </style>
 </head>
+
 <body>
 <header>
-<h1>MaliMart Seller Panel</h1>
-<p>Upload and manage your products</p>
+  <h1>MaliMart Seller Panel</h1>
+  <p>Upload and manage your products</p>
 </header>
 
 <main>
-<div id="message" class="message hidden"></div>
-<section id="auth" class="card">
-  <h2>Seller Account</h2>
+  <div id="message" class="message hidden" role="status" aria-live="polite"></div>
 
-  <label for="storeName">Store name</label>
-  <input id="storeName" type="text"
-         placeholder="Enter your store name">
+  <section id="auth" class="card">
+    <h2>Seller Account</h2>
 
-  <label for="storeAddress">Store address</label>
-  <input id="storeAddress" type="text"
-         placeholder="Enter your store address">
+    <label for="storeName">Store name</label>
+    <input id="storeName" type="text" placeholder="Enter your store name" autocomplete="organization">
 
-  <label for="phone">Phone number</label>
-  <input id="phone" type="tel"
-         placeholder="Enter your phone number">
+    <label for="storeAddress">Store address</label>
+    <input id="storeAddress" type="text" placeholder="Enter your store address">
 
-  <label for="email">Gmail address</label>
-  <input id="email" type="email"
-         placeholder="Enter your Gmail address"
-         autocomplete="email">
+    <label for="phone">Phone number</label>
+    <input id="phone" type="tel" placeholder="Enter your phone number" autocomplete="tel">
 
-  <label for="password">Password</label>
-  <input id="password" type="password"
-         placeholder="Password (minimum 6 characters)"
-         autocomplete="current-password">
+    <label for="email">Email address</label>
+    <input id="email" type="email" placeholder="Enter your email address" autocomplete="email">
 
-  <button id="loginBtn" type="button">Login</button>
-  <button id="registerBtn" type="button">
-    Create Seller Account
-  </button>
+    <label for="password">Password</label>
+    <input id="password" type="password" placeholder="Password (minimum 6 characters)" autocomplete="current-password">
 
-  <p class="note">
-    Use the same email to log in again. Keep your password private.
-  </p>
-</section>
-<button id="loginBtn" type="button">Login</button>
-<button id="registerBtn" type="button">Create Seller Account</button>
-<p class="note">Use the same email to log in again. Keep your password private.</p>
-<button id="loginBtn" type="button">Login</button>
-<button id="registerBtn" type="button">Create Seller Account</button>
-<p class="note">Use the same email to log in again. Keep your password private.</p>
-</section>
+    <button id="loginBtn" type="button">Login</button>
+    <button id="registerBtn" type="button">Create Seller Account</button>
 
-<section id="panel" class="hidden">
-<div class="card">
-<h2>Seller Dashboard</h2>
-<p id="sellerEmail"></p>
-<button id="logoutBtn" class="secondary" type="button">Logout</button>
-</div>
+    <p class="note">
+      New sellers: complete all five fields and choose Create Seller Account.
+      Returning sellers: enter your email and password, then choose Login.
+      Keep your password private.
+    </p>
+  </section>
 
-<div class="card">
-<h2>Upload Product</h2>
-<form id="productForm">
-<label for="productName">Product name</label>
-<input id="productName" required maxlength="100" placeholder="e.g. Men's T-shirt">
+  <section id="panel" class="hidden">
+    <div class="card">
+      <h2>Seller Dashboard</h2>
+      <p id="sellerEmail"></p>
+      <button id="logoutBtn" class="secondary" type="button">Logout</button>
+    </div>
 
-<label for="category">Category</label>
-<select id="category" required>
-<option value="">Loading categories...</option>
-</select>
+    <div class="card">
+      <h2>Upload Product</h2>
 
-<label for="price">Your product price (Rs.)</label>
-<input id="price" type="number" min="1" step="0.01" required placeholder="Enter your price">
+      <form id="productForm">
+        <label for="productName">Product name</label>
+        <input id="productName" required maxlength="100" placeholder="e.g. Men's T-shirt">
 
-<label for="size">Size</label>
-<select id="size" required>
-<option value="">Select size</option>
-<option value="Free Size">Free Size</option>
-<option value="XS">XS</option>
-<option value="S">S</option>
-<option value="M">M</option>
-<option value="L">L</option>
-<option value="XL">XL</option>
-<option value="XXL">XXL</option>
-<option value="38">38</option>
-<option value="39">39</option>
-<option value="40">40</option>
-<option value="41">41</option>
-<option value="42">42</option>
-<option value="43">43</option>
-<option value="44">44</option>
-</select>
+        <label for="category">Category</label>
+        <select id="category" required disabled>
+          <option value="">Log in to load categories</option>
+        </select>
 
-<label for="photo">Product photo</label>
-<input id="photo" type="file" accept="image/*" required>
-<img id="preview" class="preview" alt="Product preview" hidden>
-<p class="note">Photos are resized onto a clean white square background. The original background is not automatically removed.</p>
+        <label for="price">Your product price (Rs.)</label>
+        <input id="price" type="number" min="1" step="0.01" required placeholder="Enter your price">
 
-<label>
-<input id="inStock" type="checkbox" checked style="width:auto">
-Product is available in stock
-</label>
+        <label for="size">Size</label>
+        <select id="size" required>
+          <option value="">Select size</option>
+          <option value="Free Size">Free Size</option>
+          <option value="XS">XS</option>
+          <option value="S">S</option>
+          <option value="M">M</option>
+          <option value="L">L</option>
+          <option value="XL">XL</option>
+          <option value="XXL">XXL</option>
+          <option value="38">38</option>
+          <option value="39">39</option>
+          <option value="40">40</option>
+          <option value="41">41</option>
+          <option value="42">42</option>
+          <option value="43">43</option>
+          <option value="44">44</option>
+        </select>
 
-<button id="uploadBtn" type="submit">Upload Product</button>
-</form>
-</div>
+        <label for="photo">Product photo</label>
+        <input id="photo" type="file" accept="image/*" required>
+        <img id="preview" class="preview hidden" alt="Product preview">
 
-<div class="card">
-<h2>My Products</h2>
-<button id="refreshBtn" class="secondary" type="button">Refresh Products</button>
-<div id="products">Loading products...</div>
-</div>
-</section>
+        <p class="note">
+          Images are resized onto a clean white square background.
+          This does not automatically remove the original photo background.
+          Maximum original image size: 10 MB.
+        </p>
+
+        <label>
+          <input id="inStock" type="checkbox" checked>
+          Product is available in stock
+        </label>
+
+        <button id="uploadBtn" type="submit">Upload Product</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>My Products</h2>
+      <button id="refreshBtn" class="secondary" type="button">Refresh Products</button>
+      <div id="products">Your products will appear here.</div>
+    </div>
+  </section>
 </main>
 
 <script>
 (function(){
 "use strict";
 
-const SUPABASE_URL="https://adlovngoubhcdlinhcoz.supabase.co";
-const SUPABASE_KEY="sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
-const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY,
-  {
-    auth: {
-      storageKey: "malimart-seller-auth",
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
+const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
+
+const $ = id => document.getElementById(id);
+
+let db;
+let currentUser = null;
+let originalFile = null;
+let preparedImage = null;
+let previewUrl = null;
+let categoriesLoaded = false;
+let loadingCategories = false;
+let authOperation = false;
+let panelRequest = 0;
+
+function showMessage(message, isError = false) {
+  const el = $("message");
+  el.textContent = message;
+  el.classList.remove("hidden");
+  el.style.background = isError ? "#fde8e7" : "#eef6ee";
+  el.style.color = isError ? "#9b1c1c" : "#185c2c";
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+
+function clearMessage() {
+  $("message").classList.add("hidden");
+}
+
+function errText(error) {
+  return error && error.message ? error.message : String(error || "Unknown error");
+}
+
+function setBusy(button, busy, text) {
+  button.disabled = busy;
+
+  if (busy) {
+    if (!button.dataset.oldText) {
+      button.dataset.oldText = button.textContent;
     }
+    button.textContent = text || "Please wait...";
+  } else {
+    button.textContent = button.dataset.oldText || button.textContent;
+    delete button.dataset.oldText;
   }
-);
-const $=id=>document.getElementById(id);
-
-let currentUser=null;
-let originalFile=null;
-let preparedImage=null;
-let categoriesLoaded=false;
-let loadingCategories=false;
-let previewUrl=null;
-
-function showMessage(text,isError=false){
- const el=$("message");
- el.textContent=text;
- el.classList.remove("hidden");
- el.style.background=isError?"#fde8e7":"#eef6ee";
- el.style.color=isError?"#9b1c1c":"#185c2c";
- window.scrollTo({top:0,behavior:"smooth"});
 }
 
-function clearMessage(){
- $("message").classList.add("hidden");
+function showAuth() {
+  panelRequest++;
+  currentUser = null;
+  categoriesLoaded = false;
+  loadingCategories = false;
+
+  $("auth").classList.remove("hidden");
+  $("panel").classList.add("hidden");
+  $("category").disabled = true;
+  $("category").replaceChildren(new Option("Log in to load categories", ""));
+  $("products").textContent = "";
 }
 
-function errText(error){
- return error&&error.message?error.message:String(error||"Unknown error");
+function hideAuthFor(user) {
+  currentUser = user;
+  $("auth").classList.add("hidden");
+  $("panel").classList.remove("hidden");
+  $("sellerEmail").textContent = "Logged in as: " + (user.email || "Seller");
 }
 
-function setBusy(button,busy,text){
- button.disabled=busy;
- if(busy){
-  if(!button.dataset.oldText) button.dataset.oldText=button.textContent;
-  button.textContent=text||"Please wait...";
- }else{
-  button.textContent=button.dataset.oldText||button.textContent;
-  delete button.dataset.oldText;
- }
-}
+async function loadCategories() {
+  if (loadingCategories || !currentUser) return;
 
-/* Handles public and signed Supabase Storage image URLs. */
-function getProductStoragePath(imageUrl){
- try{
-  const pathname=new URL(imageUrl).pathname;
-  const markers=[
-   "/storage/v1/object/public/product-images/",
-   "/storage/v1/object/sign/product-images/"
-  ];
+  loadingCategories = true;
+  categoriesLoaded = false;
 
-  for(const marker of markers){
-   const index=pathname.indexOf(marker);
-   if(index!==-1){
-    return decodeURIComponent(pathname.slice(index+marker.length));
-   }
-  }
- }catch(e){}
- return null;
-}
+  const select = $("category");
+  select.disabled = true;
+  select.replaceChildren(new Option("Loading categories...", ""));
 
-/* Supports Boolean, numeric and text stock values. */
-function stockLabel(value){
- if(value===true) return "Available";
- if(value===false) return "Unavailable";
+  try {
+    const {data, error} = await db
+      .from("categories")
+      .select("id,name,active")
+      .eq("active", true)
+      .order("name");
 
- if(value===null||value===undefined||value===""){
-  return "Not specified";
- }
+    if (error) throw error;
 
- if(typeof value==="number"){
-  return value>0?"Available (quantity: "+value+")":"Unavailable";
- }
+    if (!data || data.length === 0) {
+      select.replaceChildren(new Option("No active categories", ""));
+      showMessage("No active categories found. Please check your category settings in the admin dashboard.", true);
+      return;
+    }
 
- const textValue=String(value).trim().toLowerCase();
+    select.replaceChildren(new Option("Select category", ""));
 
- if(["true","yes","available","in stock"].includes(textValue)){
-  return "Available";
- }
-
- if(["false","no","unavailable","out of stock"].includes(textValue)){
-  return "Unavailable";
- }
-
- if(/^\d+$/.test(textValue)){
-  const quantity=Number(textValue);
-  return quantity>0?"Available (quantity: "+quantity+")":"Unavailable";
- }
-
- return String(value);
-}
-
-async function loadCategories(){
- if(loadingCategories) return;
-
- loadingCategories=true;
- categoriesLoaded=false;
-
- const select=$("category");
- select.disabled=true;
- select.replaceChildren(new Option("Loading categories...",""));
-
- try{
-  const {data,error}=await db
-   .from("categories")
-   .select("id,name,active")
-   .eq("active",true)
-   .order("name");
-
-  if(error) throw error;
-
-  if(!data||data.length===0){
-   select.replaceChildren(new Option("No active categories",""));
-   showMessage("No active categories found. Check that Clothes and Shoes are active.",true);
-   return;
-  }
-
-  select.replaceChildren(new Option("Select category",""));
-
-  data.forEach(c=>{
-   if(c.id&&c.name){
-    select.add(new Option(c.name,c.id));
-   }
-  });
-
-  if(select.options.length<2){
-   select.replaceChildren(new Option("No usable categories",""));
-   showMessage("No categories with valid IDs were found.",true);
-   return;
-  }
-
-  categoriesLoaded=true;
-  select.disabled=false;
-
- }catch(e){
-  select.replaceChildren(new Option("Could not load categories",""));
-  showMessage("Category loading failed: "+errText(e),true);
- }finally{
-  loadingCategories=false;
- }
-}
-
-async function loadProducts(){
- if(!currentUser) return;
-
- $("products").textContent="Loading products...";
-
- try{
-  const {data,error}=await db
-   .from("products")
-   .select("id,name,category_id,base_price,price,size,image_url,stock,status,created_at,categories(name)")
-   .eq("seller_id",currentUser.id)
-   .order("created_at",{ascending:false});
-
-  if(error) throw error;
-
-  const container=$("products");
-  container.replaceChildren();
-
-  if(!data||data.length===0){
-   container.textContent="You have not uploaded any products yet.";
-   return;
-  }
-
-  data.forEach(p=>{
-   const card=document.createElement("div");
-   card.className="product";
-
-   const photoBox=document.createElement("div");
-
-   if(p.image_url){
-    const img=document.createElement("img");
-    img.alt=p.name||"Product photo";
-    img.loading="lazy";
-
-    let triedSignedUrl=false;
-
-    img.onerror=async()=>{
-     if(!triedSignedUrl){
-      triedSignedUrl=true;
-      const path=getProductStoragePath(p.image_url);
-
-      if(path){
-       try{
-        const {data:signedData,error:signedError}=await db.storage
-         .from("product-images")
-         .createSignedUrl(path,3600);
-
-        if(!signedError&&signedData&&signedData.signedUrl){
-         img.src=signedData.signedUrl;
-         return;
-        }
-       }catch(e){}
+    data.forEach(category => {
+      if (category.id && category.name) {
+        select.add(new Option(category.name, category.id));
       }
-     }
+    });
 
-     img.style.display="none";
+    if (select.options.length < 2) {
+      select.replaceChildren(new Option("No usable categories", ""));
+      showMessage("No categories with valid IDs were found.", true);
+      return;
+    }
 
-     if(!photoBox.querySelector(".photo-fallback")){
-      const fallback=document.createElement("div");
-      fallback.className="photo-fallback";
-      fallback.textContent="Photo unavailable. Check image storage access.";
-      photoBox.appendChild(fallback);
-     }
-    };
-
-    img.src=p.image_url;
-    photoBox.appendChild(img);
-   }else{
-    const fallback=document.createElement("div");
-    fallback.className="photo-fallback";
-    fallback.textContent="No photo URL saved for this product.";
-    photoBox.appendChild(fallback);
-   }
-
-   card.appendChild(photoBox);
-
-   const title=document.createElement("h3");
-   title.textContent=p.name||"Unnamed product";
-   card.appendChild(title);
-
-   const related=Array.isArray(p.categories)?p.categories[0]:p.categories;
-
-   const details=document.createElement("p");
-   details.textContent=
-    "Category: "+(related?.name||"Unknown")+
-    " | Price: Rs. "+(p.base_price??p.price??"-")+
-    " | Size: "+(p.size||"-");
-   card.appendChild(details);
-
-   const stock=document.createElement("p");
-   stock.textContent="Stock: "+stockLabel(p.stock);
-   card.appendChild(stock);
-
-   const status=document.createElement("p");
-   status.textContent="Status: "+(p.status||"Pending");
-   card.appendChild(status);
-
-   container.appendChild(card);
-  });
-
- }catch(e){
-  $("products").textContent="Could not load products: "+errText(e);
- }
+    categoriesLoaded = true;
+    select.disabled = false;
+  } catch (error) {
+    select.replaceChildren(new Option("Could not load categories", ""));
+    showMessage("Category loading failed: " + errText(error), true);
+  } finally {
+    loadingCategories = false;
+  }
 }
 
-async function showPanel(user){
- currentUser=user;
- $("auth").classList.add("hidden");
- $("panel").classList.remove("hidden");
- $("sellerEmail").textContent="Logged in as: "+(user.email||"Seller");
+function stockLabel(value) {
+  if (value === true) return "Available";
+  if (value === false) return "Unavailable";
+  if (value === null || value === undefined || value === "") return "Not specified";
 
- await loadCategories();
+  if (typeof value === "number") {
+    return value > 0 ? "Available (quantity: " + value + ")" : "Unavailable";
+  }
 
- if(currentUser&&currentUser.id===user.id){
+  const valueText = String(value).trim().toLowerCase();
+
+  if (["true", "yes", "available", "in stock"].includes(valueText)) return "Available";
+  if (["false", "no", "unavailable", "out of stock"].includes(valueText)) return "Unavailable";
+
+  if (/^\d+$/.test(valueText)) {
+    const quantity = Number(valueText);
+    return quantity > 0 ? "Available (quantity: " + quantity + ")" : "Unavailable";
+  }
+
+  return String(value);
+}
+
+async function loadProducts() {
+  if (!currentUser) return;
+
+  const userAtStart = currentUser;
+  $("products").textContent = "Loading products...";
+
+  try {
+    const {data, error} = await db
+      .from("products")
+      .select("id,name,category_id,base_price,price,size,image_url,stock,status,created_at,categories(name)")
+      .eq("seller_id", userAtStart.id)
+      .order("created_at", {ascending: false});
+
+    if (error) throw error;
+    if (!currentUser || currentUser.id !== userAtStart.id) return;
+
+    const container = $("products");
+    container.replaceChildren();
+
+    if (!data || data.length === 0) {
+      container.textContent = "You have not uploaded any products yet.";
+      return;
+    }
+
+    data.forEach(product => {
+      const card = document.createElement("div");
+      card.className = "product";
+
+      const photoBox = document.createElement("div");
+
+      if (product.image_url) {
+        const img = document.createElement("img");
+        img.alt = product.name || "Product photo";
+        img.loading = "lazy";
+        img.src = product.image_url;
+
+        img.onerror = () => {
+          img.style.display = "none";
+
+          if (!photoBox.querySelector(".photo-fallback")) {
+            const fallback = document.createElement("div");
+            fallback.className = "photo-fallback";
+            fallback.textContent = "Photo unavailable. Check image storage access.";
+            photoBox.appendChild(fallback);
+          }
+        };
+
+        photoBox.appendChild(img);
+      } else {
+        const fallback = document.createElement("div");
+        fallback.className = "photo-fallback";
+        fallback.textContent = "No photo URL saved for this product.";
+        photoBox.appendChild(fallback);
+      }
+
+      card.appendChild(photoBox);
+
+      const title = document.createElement("h3");
+      title.textContent = product.name || "Unnamed product";
+      card.appendChild(title);
+
+      const related = Array.isArray(product.categories)
+        ? product.categories[0]
+        : product.categories;
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Category: " + (related?.name || "Unknown") +
+        " | Price: Rs. " + (product.base_price ?? product.price ?? "-") +
+        " | Size: " + (product.size || "-");
+      card.appendChild(details);
+
+      const stock = document.createElement("p");
+      stock.textContent = "Stock: " + stockLabel(product.stock);
+      card.appendChild(stock);
+
+      const status = document.createElement("p");
+      status.textContent = "Status: " + (product.status || "Pending");
+      card.appendChild(status);
+
+      container.appendChild(card);
+    });
+  } catch (error) {
+    $("products").textContent = "Could not load products: " + errText(error);
+  }
+}
+
+async function showPanel(user) {
+  const request = ++panelRequest;
+  hideAuthFor(user);
+
+  await loadCategories();
+
+  if (request !== panelRequest || !currentUser || currentUser.id !== user.id) return;
   await loadProducts();
- }
 }
 
-function showAuth(){
- currentUser=null;
- categoriesLoaded=false;
- $("auth").classList.remove("hidden");
- $("panel").classList.add("hidden");
- $("products").textContent="";
-}
-
-async function checkSession(){
- const {data,error}=await db.auth.getSession();
-
- if(error){
-  showMessage(errText(error),true);
-  return;
- }
-
- if(data.session){
-  await showPanel(data.session.user);
- }else{
-  showAuth();
- }
-}
-
-
-$("registerBtn").addEventListener("click", async () => {
+async function registerSeller() {
   clearMessage();
 
   const storeName = $("storeName").value.trim();
@@ -453,9 +396,10 @@ $("registerBtn").addEventListener("click", async () => {
 
   const button = $("registerBtn");
   setBusy(button, true, "Creating account...");
+  authOperation = true;
 
   try {
-    const { data, error } = await db.auth.signUp({
+    const {data, error} = await db.auth.signUp({
       email,
       password,
       options: {
@@ -471,298 +415,294 @@ $("registerBtn").addEventListener("click", async () => {
 
     if (error) throw error;
 
-    if (data.session) {
-      await showPanel(data.session.user);
+    if (data.session && data.user) {
+      await showPanel(data.user);
       showMessage("Seller account created successfully.");
     } else {
       showMessage(
-        "Account created. Check your email for the confirmation link, then log in."
+        "Registration submitted. Check your email for the confirmation link. After confirming, return here and log in."
       );
     }
-  } catch (e) {
-    showMessage(errText(e), true);
+  } catch (error) {
+    showMessage("Registration failed: " + errText(error), true);
+  } finally {
+    authOperation = false;
+    setBusy(button, false);
+  }
+}
+
+async function loginSeller() {
+  clearMessage();
+
+  const email = $("email").value.trim().toLowerCase();
+  const password = $("password").value;
+
+  if (!email || !password) {
+    showMessage("Enter your email and password.", true);
+    return;
+  }
+
+  const button = $("loginBtn");
+  setBusy(button, true, "Logging in...");
+  authOperation = true;
+
+  try {
+    const {data, error} = await db.auth.signInWithPassword({email, password});
+    if (error) throw error;
+
+    if (!data.user) throw new Error("Login succeeded but no user was returned.");
+
+    await showPanel(data.user);
+    showMessage("Login successful.");
+  } catch (error) {
+    showMessage("Login failed: " + errText(error), true);
+  } finally {
+    authOperation = false;
+    setBusy(button, false);
+  }
+}
+
+async function logoutSeller() {
+  clearMessage();
+
+  const button = $("logoutBtn");
+  setBusy(button, true, "Logging out...");
+
+  try {
+    const {error} = await db.auth.signOut();
+    if (error) throw error;
+
+    showAuth();
+    showMessage("You have logged out.");
+  } catch (error) {
+    showMessage("Logout failed: " + errText(error), true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+function clearPreview() {
+  $("preview").classList.add("hidden");
+  $("preview").removeAttribute("src");
+
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+  }
+
+  originalFile = null;
+  preparedImage = null;
+}
+
+$("registerBtn").addEventListener("click", registerSeller);
+$("loginBtn").addEventListener("click", loginSeller);
+$("logoutBtn").addEventListener("click", logoutSeller);
+$("refreshBtn").addEventListener("click", loadProducts);
+
+$("photo").addEventListener("change", event => {
+  clearMessage();
+  clearPreview();
+
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    showMessage("Please select an image file.", true);
+    event.target.value = "";
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    showMessage("Choose an image smaller than 10 MB.", true);
+    event.target.value = "";
+    return;
+  }
+
+  originalFile = file;
+
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
+
+  img.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1000;
+      canvas.height = 1000;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Image processing is not available in this browser.");
+
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, 1000, 1000);
+
+      const scale = Math.min(900 / img.width, 900 / img.height);
+      const width = img.width * scale;
+      const height = img.height * scale;
+
+      ctx.drawImage(img, (1000 - width) / 2, (1000 - height) / 2, width, height);
+
+      canvas.toBlob(blob => {
+        URL.revokeObjectURL(objectUrl);
+
+        if (!blob) {
+          showMessage("Could not prepare the image. Please try another.", true);
+          return;
+        }
+
+        preparedImage = blob;
+        previewUrl = URL.createObjectURL(blob);
+        $("preview").src = previewUrl;
+        $("preview").classList.remove("hidden");
+      }, "image/jpeg", 0.88);
+    } catch (error) {
+      URL.revokeObjectURL(objectUrl);
+      showMessage("Image preparation failed: " + errText(error), true);
+    }
+  };
+
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    showMessage("Could not read this image. Please choose another.", true);
+  };
+
+  img.src = objectUrl;
+});
+
+$("productForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  clearMessage();
+
+  if (!currentUser) {
+    showMessage("Please log in first.", true);
+    return;
+  }
+
+  if (!categoriesLoaded) {
+    showMessage("Categories are not ready. Please refresh and log in again.", true);
+    return;
+  }
+
+  const name = $("productName").value.trim();
+  const categoryId = $("category").value;
+  const categoryName = $("category").selectedOptions[0]?.textContent || "";
+  const price = Number($("price").value);
+  const size = $("size").value;
+  const stock = $("inStock").checked;
+
+  if (!name || !categoryId || !size || !Number.isFinite(price) || price <= 0) {
+    showMessage("Complete all product details correctly.", true);
+    return;
+  }
+
+  if (!originalFile || !preparedImage) {
+    showMessage("Select a product photo and wait until its preview appears.", true);
+    return;
+  }
+
+  const button = $("uploadBtn");
+  setBusy(button, true, "Uploading product...");
+
+  let uploadedPath = null;
+
+  try {
+    const safeName = originalFile.name
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 50) || "product";
+
+    const path = currentUser.id + "/" + Date.now() + "_" + safeName + ".jpg";
+
+    const {data: uploadData, error: uploadError} = await db.storage
+      .from("product-images")
+      .upload(path, preparedImage, {
+        contentType: "image/jpeg",
+        upsert: false
+      });
+
+    if (uploadError) {
+      throw new Error("Photo upload failed: " + uploadError.message);
+    }
+
+    uploadedPath = uploadData.path;
+
+    const imageUrl = db.storage
+      .from("product-images")
+      .getPublicUrl(uploadData.path).data.publicUrl;
+
+    const product = {
+      seller_id: currentUser.id,
+      name,
+      category_id: categoryId,
+      base_price: price,
+      price,
+      size,
+      image_url: imageUrl,
+      stock
+    };
+
+    const {error: insertError} = await db
+      .from("products")
+      .insert(product);
+
+    if (insertError) {
+      throw new Error("Photo uploaded, but product saving failed: " + insertError.message);
+    }
+
+    showMessage("Product saved successfully! Category: " + categoryName);
+
+    $("productForm").reset();
+    $("inStock").checked = true;
+    $("category").disabled = false;
+    clearPreview();
+
+    await loadProducts();
+  } catch (error) {
+    showMessage(errText(error), true);
   } finally {
     setBusy(button, false);
   }
 });
-  
- clearMessage();
 
- const email=$("email").value.trim();
- const password=$("password").value;
+async function start() {
+  try {
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error("Supabase failed to load. Check your internet and refresh the page.");
+    }
 
- if(!email||password.length<6){
-  showMessage("Enter a valid email and a password with at least 6 characters.",true);
-  return;
- }
-
- const button=$("registerBtn");
- setBusy(button,true,"Creating account...");
-
- try {
-  const {data,error}=await db.auth.signUp({
-    email,
-    password,
-    options:{
-      data:{
-        role:"seller"
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        storageKey: "malimart-seller-auth",
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
-    }
-  });
-  if(error) throw error;
+    });
 
-  if(data.session){
-   await showPanel(data.session.user);
-   showMessage("Seller account created successfully.");
-  }else{
-   showMessage("Account created. Check your email for the confirmation link, then log in.");
-  }
- }catch(e){
-  showMessage(errText(e),true);
- }finally{
-  setBusy(button,false);
- }
-});
+    const {data, error} = await db.auth.getSession();
+    if (error) throw error;
 
-$("loginBtn").addEventListener("click",async()=>{
- clearMessage();
-
- const email=$("email").value.trim();
- const password=$("password").value;
-
- if(!email||!password){
-  showMessage("Enter your email and password.",true);
-  return;
- }
-
- const button=$("loginBtn");
- setBusy(button,true,"Logging in...");
-
- try{
-  const {data,error}=await db.auth.signInWithPassword({email,password});
-  if(error) throw error;
-
-  await showPanel(data.user);
-  showMessage("Login successful.");
- }catch(e){
-  showMessage(errText(e),true);
- }finally{
-  setBusy(button,false);
- }
-});
-
-$("logoutBtn").addEventListener("click",async()=>{
- clearMessage();
-
- const {error}=await db.auth.signOut();
-
- if(error){
-  showMessage(errText(error),true);
-  return;
- }
-
- showAuth();
- showMessage("You have logged out.");
-});
-
-$("photo").addEventListener("change",event=>{
- clearMessage();
-
- originalFile=event.target.files&&event.target.files[0];
- preparedImage=null;
- $("preview").hidden=true;
- $("preview").removeAttribute("src");
-
- if(previewUrl){
-  URL.revokeObjectURL(previewUrl);
-  previewUrl=null;
- }
-
- if(!originalFile) return;
-
- if(!originalFile.type.startsWith("image/")){
-  showMessage("Please select an image file.",true);
-  event.target.value="";
-  originalFile=null;
-  return;
- }
-
- if(originalFile.size>10*1024*1024){
-  showMessage("Choose an image smaller than 10 MB.",true);
-  event.target.value="";
-  originalFile=null;
-  return;
- }
-
- const objectUrl=URL.createObjectURL(originalFile);
- const img=new Image();
-
- img.onload=()=>{
-  try{
-   const canvas=document.createElement("canvas");
-   canvas.width=1000;
-   canvas.height=1000;
-
-   const ctx=canvas.getContext("2d");
-   ctx.fillStyle="#fff";
-   ctx.fillRect(0,0,1000,1000);
-
-   const scale=Math.min(900/img.width,900/img.height);
-   const w=img.width*scale;
-   const h=img.height*scale;
-
-   ctx.drawImage(img,(1000-w)/2,(1000-h)/2,w,h);
-
-   canvas.toBlob(blob=>{
-    URL.revokeObjectURL(objectUrl);
-
-    if(!blob){
-     showMessage("Could not prepare the image. Please try another.",true);
-     return;
+    if (data.session) {
+      await showPanel(data.session.user);
+    } else {
+      showAuth();
     }
 
-    preparedImage=blob;
-    previewUrl=URL.createObjectURL(blob);
-    $("preview").src=previewUrl;
-    $("preview").hidden=false;
-   },"image/jpeg",0.88);
+    db.auth.onAuthStateChange((event, session) => {
+      if (authOperation) return;
 
-  }catch(e){
-   URL.revokeObjectURL(objectUrl);
-   showMessage("Image preparation failed: "+errText(e),true);
+      if (event === "SIGNED_OUT") {
+        showAuth();
+      } else if (event === "SIGNED_IN" && session?.user) {
+        void showPanel(session.user);
+      }
+    });
+  } catch (error) {
+    showAuth();
+    showMessage("Could not start the seller panel: " + errText(error), true);
   }
- };
+}
 
- img.onerror=()=>{
-  URL.revokeObjectURL(objectUrl);
-  showMessage("Could not read this image. Please choose another.",true);
- };
-
- img.src=objectUrl;
-});
-
-$("productForm").addEventListener("submit",async event=>{
- event.preventDefault();
- clearMessage();
-
- if(!currentUser){
-  showMessage("Please log in first.",true);
-  return;
- }
-
- if(!categoriesLoaded){
-  showMessage("Categories are not ready. Refresh the page and log in again.",true);
-  return;
- }
-
- const name=$("productName").value.trim();
- const categoryId=$("category").value;
- const categoryName=$("category").selectedOptions[0]?.textContent||"";
- const price=Number($("price").value);
- const size=$("size").value;
- const stock=$("inStock").checked;
-
- if(!name||!categoryId||!size||!Number.isFinite(price)||price<=0){
-  showMessage("Complete all product details correctly.",true);
-  return;
- }
-
- if(!originalFile||!preparedImage){
-  showMessage("Select a product photo and wait until its preview appears.",true);
-  return;
- }
-
- const button=$("uploadBtn");
- setBusy(button,true,"Uploading product...");
-
- try{
-  const safeName=originalFile.name
-   .replace(/\.[^.]+$/,"")
-   .replace(/[^a-zA-Z0-9_-]/g,"_")
-   .slice(0,50)||"product";
-
-  const path=currentUser.id+"/"+Date.now()+"_"+safeName+".jpg";
-
-  const {data:uploadData,error:uploadError}=await db.storage
-   .from("product-images")
-   .upload(path,preparedImage,{
-    contentType:"image/jpeg",
-    upsert:false
-   });
-
-  if(uploadError){
-   throw new Error("Photo upload failed: "+uploadError.message);
-  }
-
-  const imageUrl=db.storage
-   .from("product-images")
-   .getPublicUrl(uploadData.path).data.publicUrl;
-
-  const product={
-   seller_id:currentUser.id,
-   name:name,
-   category_id:categoryId,
-   base_price:price,
-   price:price,
-   size:size,
-   image_url:imageUrl,
-   stock:stock
-  };
-
-  const {error:insertError}=await db
-   .from("products")
-   .insert(product);
-
-  if(insertError){
-   throw new Error("Photo uploaded, but product saving failed: "+insertError.message);
-  }
-
-  showMessage("Product saved successfully! Category: "+categoryName);
-
-  $("productForm").reset();
-  $("inStock").checked=true;
-  $("preview").hidden=true;
-  $("preview").removeAttribute("src");
-  originalFile=null;
-  preparedImage=null;
-
-  if(previewUrl){
-   URL.revokeObjectURL(previewUrl);
-   previewUrl=null;
-  }
-
-  await loadProducts();
-
- }catch(e){
-  showMessage(errText(e),true);
- }finally{
-  setBusy(button,false);
- }
-});
-
-$("refreshBtn").addEventListener("click",loadProducts);
-
-db.auth.onAuthStateChange((event,session)=>{
- if(session&&session.user){
-  currentUser=session.user;
-  $("auth").classList.add("hidden");
-  $("panel").classList.remove("hidden");
-  $("sellerEmail").textContent="Logged in as: "+(session.user.email||"Seller");
-
-  if(event==="SIGNED_IN"){
-   setTimeout(async()=>{
-    if(currentUser&&currentUser.id===session.user.id){
-     await loadCategories();
-     await loadProducts();
-    }
-   },0);
-  }
- }else if(event==="SIGNED_OUT"){
-  showAuth();
- }
-});
-
-checkSession();
+start();
 })();
 </script>
 </body>
