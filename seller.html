@@ -144,7 +144,18 @@ Product is available in stock
 
 const SUPABASE_URL="https://adlovngoubhcdlinhcoz.supabase.co";
 const SUPABASE_KEY="sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth: {
+      storageKey: "malimart-seller-auth",
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 const $=id=>document.getElementById(id);
 
 let currentUser=null;
