@@ -34,8 +34,40 @@ img.preview{display:block;width:180px;height:180px;object-fit:contain;background
 
 <main>
 <div id="message" class="message hidden"></div>
-
 <section id="auth" class="card">
+  <h2>Seller Account</h2>
+
+  <label for="storeName">Store name</label>
+  <input id="storeName" type="text"
+         placeholder="Enter your store name">
+
+  <label for="storeAddress">Store address</label>
+  <input id="storeAddress" type="text"
+         placeholder="Enter your store address">
+
+  <label for="phone">Phone number</label>
+  <input id="phone" type="tel"
+         placeholder="Enter your phone number">
+
+  <label for="email">Gmail address</label>
+  <input id="email" type="email"
+         placeholder="Enter your Gmail address"
+         autocomplete="email">
+
+  <label for="password">Password</label>
+  <input id="password" type="password"
+         placeholder="Password (minimum 6 characters)"
+         autocomplete="current-password">
+
+  <button id="loginBtn" type="button">Login</button>
+  <button id="registerBtn" type="button">
+    Create Seller Account
+  </button>
+
+  <p class="note">
+    Use the same email to log in again. Keep your password private.
+  </p>
+</section>
 <button id="loginBtn" type="button">Login</button>
 <button id="registerBtn" type="button">Create Seller Account</button>
 <p class="note">Use the same email to log in again. Keep your password private.</p>
