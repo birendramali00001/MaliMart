@@ -160,7 +160,20 @@ const supabaseClient = window.supabase.createClient(
         return;
       }
 
-      message.textContent = "Login successful!";
+      if (
+  (data.user?.email || "").toLowerCase() !==
+  "birendramali00001@gmail.com"
+) {
+  await supabaseClient.auth.signOut();
+
+  message.textContent =
+    "Access denied. This account is not authorized as the main admin.";
+  message.style.color = "red";
+
+  loginButton.disabled = false;
+  loginButton.textContent = "Login";
+  return;
+      }
       message.style.color = "green";
 
       setTimeout(function() {
