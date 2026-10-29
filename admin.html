@@ -119,12 +119,18 @@
   <script>
     const SUPABASE_URL = "https://adlovngoubhcdlinhcoz.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_HQLt_TlXvk3rR3h8ckIHTA_wWAej6Dp";
-
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY
-    );
-
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      storageKey: "malimart-admin-auth",
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
     const loginForm = document.getElementById("loginForm");
     const loginButton = document.getElementById("loginButton");
     const message = document.getElementById("message");
