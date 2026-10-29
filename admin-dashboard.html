@@ -150,45 +150,28 @@ async function withTimeout(promise, ms=12000) {
 }
 
 /* Start up: check the session only once. */
+
 async function startApp() {
   const loading = document.getElementById('loading');
 
   try {
     if (!window.supabase || !window.supabase.createClient) {
-      throw new Error('Supabase could not load. Check your internet connection and reload.');
+      throw new Error(
+        'Supabase could not load. Check your internet connection and reload.'
+      );
     }
-const result = await withTimeout(db.auth.getSession());
 
-if (result.error) throw result.error;
+    // Initialize the admin client using a separate session from the seller panel.
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        storageKey: 'malimart-admin-auth',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
 
-const session = result.data?.session;
-
-if (!session) {
-  loading.textContent =
-    'No active login found. Opening the admin login page...';
-  window.location.replace('admin.html');
-  return;
-}
-
-if (
-  (session.user?.email || '').toLowerCase() !==
-  'birendramali00001@gmail.com'
-) {
-  await db.auth.signOut();
-  loading.textContent =
-    'Access denied. Please use the main admin account.';
-  window.location.replace('admin.html');
-  return;
-}
-
-document.getElementById('adminEmail').textContent =
-  session.user.email;
-
-loading.classList.add('hidden');
-document.getElementById('app').classList.remove('hidden');
-
-await openPage('dashboard');
-
+    // Check the session only once.
     const result = await withTimeout(db.auth.getSession());
 
     if (result.error) throw result.error;
@@ -196,13 +179,27 @@ await openPage('dashboard');
     const session = result.data?.session;
 
     if (!session) {
-      loading.textContent = 'No active login found. Opening the admin login page...';
+      loading.textContent =
+        'No active admin login. Opening the login page...';
+      window.location.replace('admin.html');
+      return;
+    }
+
+    // Only the main admin account may access this dashboard.
+    if (
+      (session.user?.email || '').toLowerCase() !==
+      'birendramali00001@gmail.com'
+    ) {
+      await withTimeout(db.auth.signOut());
+
+      loading.textContent =
+        'Access denied. Please log in using the main admin account.';
       window.location.replace('admin.html');
       return;
     }
 
     document.getElementById('adminEmail').textContent =
-      session.user?.email || 'Admin';
+      session.user.email;
 
     loading.classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
@@ -214,11 +211,11 @@ await openPage('dashboard');
     loading.innerHTML =
       '<p>Could not open the admin dashboard.</p>' +
       '<p>' + escapeHTML(err.message || String(err)) + '</p>' +
-      '<button onclick="location.reload()">Try Again</button>' +
+      '<button onclick="startApp()">Try Again</button> ' +
       '<button onclick="location.href=\'admin.html\'">Open Login</button>';
   }
-}
-
+  }
+ 
 async function logout() {
   if (!db) {
     window.location.replace('admin.html');
