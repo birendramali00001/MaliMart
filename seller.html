@@ -422,7 +422,59 @@ async function checkSession(){
  }
 }
 
-$("registerBtn").addEventListener("click",async()=>{
+
+$("registerBtn").addEventListener("click", async () => {
+  clearMessage();
+
+  const storeName = $("storeName").value.trim();
+  const storeAddress = $("storeAddress").value.trim();
+  const phone = $("phone").value.trim();
+  const email = $("email").value.trim().toLowerCase();
+  const password = $("password").value;
+
+  if (!storeName || !storeAddress || !phone || !email || password.length < 6) {
+    showMessage(
+      "Please enter your store name, address, phone, email, and a password of at least 6 characters.",
+      true
+    );
+    return;
+  }
+
+  const button = $("registerBtn");
+  setBusy(button, true, "Creating account...");
+
+  try {
+    const { data, error } = await db.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: "seller",
+          full_name: storeName,
+          store_name: storeName,
+          store_address: storeAddress,
+          phone: phone
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    if (data.session) {
+      await showPanel(data.session.user);
+      showMessage("Seller account created successfully.");
+    } else {
+      showMessage(
+        "Account created. Check your email for the confirmation link, then log in."
+      );
+    }
+  } catch (e) {
+    showMessage(errText(e), true);
+  } finally {
+    setBusy(button, false);
+  }
+});
+  
  clearMessage();
 
  const email=$("email").value.trim();
